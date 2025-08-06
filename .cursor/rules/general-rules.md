@@ -1,0 +1,8 @@
+- Use React with TypeScript for frontend.
+- Style with Tailwind CSS, prioritize mobile-first design.
+- Use Express.js with PostgreSQL for backend.
+- Follow REST API conventions for endpoints.
+- Use JWT for authentication; hash passwords with bcrypt.
+- Ensure accessibility (ARIA attributes, semantic HTML).
+- Break tasks into small, testable steps.
+- Include unit tests for all backend endpoints and frontend components.

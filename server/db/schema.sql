@@ -1,0 +1,36 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE items (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  stock INTEGER NOT NULL
+);
+CREATE TABLE sales (
+  id SERIAL PRIMARY KEY,
+  buyer_name VARCHAR(100),
+  item_id INTEGER REFERENCES items(id),
+  quantity INTEGER NOT NULL,
+  total DECIMAL(10,2),
+  payment_status VARCHAR(20),
+  balance DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE expenses (
+  id SERIAL PRIMARY KEY,
+  type VARCHAR(20) CHECK (type IN ('internal', 'external')),
+  amount DECIMAL(10,2) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE debts (
+  id SERIAL PRIMARY KEY,
+  sale_id INTEGER REFERENCES sales(id),
+  amount DECIMAL(10,2) NOT NULL,
+  repaid_amount DECIMAL(10,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
