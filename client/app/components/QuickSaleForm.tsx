@@ -93,17 +93,20 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
     if (!customerName || selectedItems.length === 0 || !paymentStatus) return;
     setError(null);
     try {
-      for (const selectedItem of selectedItems) {
-        await apiService.authenticatedRequest("/api/sales", {
-          method: "POST",
-          body: JSON.stringify({
-            buyer_name: customerName,
-            item_id: selectedItem.id,
-            quantity: selectedItem.quantity,
-            payment_status: paymentStatus,
-          }),
-        });
-      }
+      // Send all items in a single request
+      const total = calculateTotal();
+      await apiService.authenticatedRequest("/api/sales", {
+        method: "POST",
+        body: JSON.stringify({
+          buyer_name: customerName,
+          items: selectedItems.map((item) => ({
+            item_id: item.id,
+            quantity: item.quantity,
+          })),
+          payment_status: paymentStatus,
+          total: total,
+        }),
+      });
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to record sale");

@@ -12,17 +12,22 @@ import QuickSaleForm from "../components/QuickSaleForm";
 import { useEffect } from "react";
 import { apiService } from "@/lib/api";
 
+interface SaleItem {
+  item_id: number;
+  quantity: number;
+  price_at_sale: number;
+  subtotal: number;
+  item_name: string;
+}
+
 interface Sale {
   id: number;
   buyer_name: string;
-  item_id: number;
-  quantity: number;
   total: number;
   payment_status: string;
   balance: number;
   created_at: string;
-  item_name: string;
-  item_price: number;
+  items: SaleItem[];
 }
 
 export default function SalesPage() {
@@ -80,12 +85,13 @@ export default function SalesPage() {
     // eslint-disable-next-line
   }, [showQuickSale]);
 
-  // Filter sales by search term (buyer name or item name)
+  // Filter sales by search term (buyer name or any item name)
   const filteredSales = sales.filter(
     (sale) =>
       sale.buyer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (sale.item_name &&
-        sale.item_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      sale.items.some((item) =>
+        item.item_name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
   );
 
   // Calculate today's summary from ALL sales, not just filtered
@@ -160,7 +166,7 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
       {/* Mobile Header */}
       <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
@@ -183,7 +189,7 @@ export default function SalesPage() {
       </header>
 
       {/* Content */}
-      <div className="p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -243,9 +249,14 @@ export default function SalesPage() {
                             {sale.payment_status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-slate-600 mb-2">
-                          {sale.item_name} ({sale.quantity})
-                        </p>
+                        <div className="text-sm text-slate-600 mb-2">
+                          {sale.items?.map((item, index) => (
+                            <p key={index}>
+                              {item.item_name} ({item.quantity})
+                              {index < sale.items.length - 1 ? ", " : ""}
+                            </p>
+                          ))}
+                        </div>
                         <p className="text-xs text-slate-500">
                           {dateStr} • {timeStr}
                         </p>

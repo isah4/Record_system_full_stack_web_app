@@ -13,11 +13,19 @@ CREATE TABLE items (
 CREATE TABLE sales (
   id SERIAL PRIMARY KEY,
   buyer_name VARCHAR(100),
-  item_id INTEGER REFERENCES items(id),
-  quantity INTEGER NOT NULL,
   total DECIMAL(10,2),
   payment_status VARCHAR(20),
   balance DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sale_items (
+  id SERIAL PRIMARY KEY,
+  sale_id INTEGER REFERENCES sales(id),
+  item_id INTEGER REFERENCES items(id),
+  quantity INTEGER NOT NULL,
+  price_at_sale DECIMAL(10,2) NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE expenses (

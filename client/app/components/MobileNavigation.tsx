@@ -37,7 +37,7 @@ export default function MobileNavigation() {
   return (
     <React.Fragment>
       {isNavigating && <LoadingScreen />}
-      <nav className="sticky bottom-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg">
         <div className="flex items-center justify-around">
           {navigationItems.map((item) => (
             <Button

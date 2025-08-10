@@ -24,9 +24,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex min-h-screen flex-col`}>
+      <body
+        className={`${inter.className} flex min-h-screen flex-col`}
+        suppressHydrationWarning={true}
+      >
         <AuthProvider>
-          <main className="page-transition flex-1">{children}</main>
+          <div className="flex flex-col min-h-screen">
+            <main className="page-transition flex-1">{children}</main>
+          </div>
         </AuthProvider>
       </body>
     </html>
