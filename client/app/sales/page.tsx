@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MobileNavigation from "../components/MobileNavigation";
 import QuickSaleForm from "../components/QuickSaleForm";
+import SaleDetailsModal from "../components/SaleDetailsModal";
 
 import { useEffect } from "react";
-import { apiService } from "@/lib/api";
+import { api } from "@/config/api";
 
 interface SaleItem {
   item_id: number;
@@ -24,7 +25,7 @@ interface Sale {
   id: number;
   buyer_name: string;
   total: number;
-  payment_status: string;
+  payment_status: 'paid' | 'partial' | 'debt';
   balance: number;
   created_at: string;
   items: SaleItem[];
@@ -33,6 +34,8 @@ interface Sale {
 export default function SalesPage() {
   const [showQuickSale, setShowQuickSale] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [showSaleDetails, setShowSaleDetails] = useState(false);
   // Set loadingSales to true initially to show loading overlay before any content
   const [loadingSales, setLoadingSales] = useState(true);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -53,9 +56,8 @@ export default function SalesPage() {
     setError(null);
     try {
       // Assume backend supports ?page= and ?limit= (default 10 per page)
-      const data = await apiService.authenticatedRequest<Sale[]>(
-        `/api/sales?page=${reset ? 1 : page}&limit=10`
-      );
+      const response = await api.get(`/sales?page=${reset ? 1 : page}&limit=10`);
+      const data = response.data;
       if (reset) {
         setSales(data);
       } else {
@@ -265,7 +267,15 @@ export default function SalesPage() {
                         <p className="text-xl font-bold text-slate-800">
                           ₦{sale.total.toLocaleString()}
                         </p>
-                        <Button variant="ghost" size="sm" className="mt-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => {
+                            setSelectedSale(sale);
+                            setShowSaleDetails(true);
+                          }}
+                        >
                           <Eye className="w-4 h-4 mr-1" />
                           View
                         </Button>
@@ -311,6 +321,17 @@ export default function SalesPage() {
       {/* Quick Sale Modal */}
       {showQuickSale && (
         <QuickSaleForm onClose={() => setShowQuickSale(false)} />
+      )}
+
+      {/* Sale Details Modal */}
+      {showSaleDetails && selectedSale && (
+        <SaleDetailsModal
+          sale={selectedSale}
+          onClose={() => {
+            setShowSaleDetails(false);
+            setSelectedSale(null);
+          }}
+        />
       )}
     </div>
   );

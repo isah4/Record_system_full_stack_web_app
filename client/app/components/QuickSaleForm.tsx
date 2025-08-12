@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { apiService } from "@/lib/api";
+import { api } from "@/config/api";
 import * as React from "react";
 
 interface QuickSaleFormProps {
@@ -27,6 +27,7 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
     Array<{ id: number; quantity: number }>
   >([]);
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [amountPaid, setAmountPaid] = useState("");
   const [items, setItems] = useState<
     Array<{ id: number; name: string; price: number; stock: number }>
   >([]);
@@ -78,8 +79,8 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiService.authenticatedRequest<any[]>("/api/items");
-        setItems(data);
+              const response = await api.get("/items");
+      setItems(response.data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch items");
       } finally {
@@ -91,22 +92,38 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
 
   const handleSubmit = async () => {
     if (!customerName || selectedItems.length === 0 || !paymentStatus) return;
+    
+    // Validate amount paid for partial payments
+    if (paymentStatus === "partial" && (!amountPaid || parseFloat(amountPaid) <= 0)) {
+      setError("Please enter a valid amount paid for partial payment");
+      return;
+    }
+    
+    if (paymentStatus === "partial" && parseFloat(amountPaid) >= calculateTotal()) {
+      setError("Amount paid cannot be greater than or equal to total amount");
+      return;
+    }
+    
     setError(null);
     try {
       // Send all items in a single request
       const total = calculateTotal();
-      await apiService.authenticatedRequest("/api/sales", {
-        method: "POST",
-        body: JSON.stringify({
-          buyer_name: customerName,
-          items: selectedItems.map((item) => ({
-            item_id: item.id,
-            quantity: item.quantity,
-          })),
-          payment_status: paymentStatus,
-          total: total,
-        }),
-      });
+      const balance = paymentStatus === "partial" ? (total - parseFloat(amountPaid)) : 0;
+      
+      const saleData = {
+        buyer_name: customerName,
+        items: selectedItems.map((item) => ({
+          item_id: item.id,
+          quantity: item.quantity,
+        })),
+        payment_status: paymentStatus,
+        total: total,
+        balance: balance,
+      };
+      
+      console.log('Sending sale data:', saleData);
+      
+      await api.post("/sales", saleData);
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to record sale");
@@ -149,6 +166,13 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
               className="h-12 text-base rounded-xl"
             />
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           {/* Item Selection */}
           <div className="space-y-3">
@@ -270,7 +294,12 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
             <Label htmlFor="payment" className="text-base font-medium">
               Payment Status
             </Label>
-            <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+            <Select value={paymentStatus} onValueChange={(value) => {
+              setPaymentStatus(value);
+              if (value !== "partial") {
+                setAmountPaid("");
+              }
+            }}>
               <SelectTrigger className="h-12 text-base rounded-xl">
                 <SelectValue placeholder="Select payment status" />
               </SelectTrigger>
@@ -281,6 +310,29 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Amount Paid (for partial payments) */}
+          {paymentStatus === "partial" && (
+            <div className="space-y-2">
+              <Label htmlFor="amountPaid" className="text-base font-medium">
+                Amount Paid
+              </Label>
+              <Input
+                id="amountPaid"
+                type="number"
+                placeholder="Enter amount paid"
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+                className="h-12 text-base rounded-xl"
+                min="0"
+                max={calculateTotal()}
+                step="0.01"
+              />
+              <p className="text-sm text-slate-500">
+                Remaining: ₦{Math.max(0, calculateTotal() - (parseFloat(amountPaid) || 0)).toLocaleString()}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer with Total and Actions */}
@@ -307,7 +359,10 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
               <Button
                 className="flex-1 h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-base font-semibold"
                 disabled={
-                  !customerName || selectedItems.length === 0 || !paymentStatus
+                  !customerName || 
+                  selectedItems.length === 0 || 
+                  !paymentStatus ||
+                  (paymentStatus === "partial" && (!amountPaid || parseFloat(amountPaid) <= 0))
                 }
                 onClick={handleSubmit}
               >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { expenseApi, type Expense } from "@/lib/api/expenses";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,59 +28,6 @@ import {
 import MobileNavigation from "../components/MobileNavigation";
 import ExpenseFormModal from "../components/ExpenseFormModal";
 import ExpenseSummaryChart from "../components/ExpenseSummaryChart";
-
-const expensesData = [
-  {
-    id: "E001",
-    description: "Electricity Bill",
-    amount: 25000,
-    category: "external",
-    subcategory: "utilities",
-    date: "2024-01-15",
-    time: "09:30 AM",
-    recurring: false,
-  },
-  {
-    id: "E002",
-    description: "Staff Lunch",
-    amount: 8500,
-    category: "internal",
-    subcategory: "meals",
-    date: "2024-01-15",
-    time: "12:00 PM",
-    recurring: true,
-  },
-  {
-    id: "E003",
-    description: "Transport - Delivery",
-    amount: 5000,
-    category: "external",
-    subcategory: "transport",
-    date: "2024-01-15",
-    time: "02:15 PM",
-    recurring: false,
-  },
-  {
-    id: "E004",
-    description: "Office Cleaning",
-    amount: 3000,
-    category: "internal",
-    subcategory: "maintenance",
-    date: "2024-01-14",
-    time: "06:00 PM",
-    recurring: true,
-  },
-  {
-    id: "E005",
-    description: "Internet Subscription",
-    amount: 15000,
-    category: "external",
-    subcategory: "utilities",
-    date: "2024-01-14",
-    time: "10:00 AM",
-    recurring: true,
-  },
-];
 
 const categories = {
   internal: {
@@ -94,14 +43,40 @@ const categories = {
 };
 
 export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterDate, setFilterDate] = useState("today");
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  // Set loadingExpenses to false until real data connection is implemented
-  const [loadingExpenses, setLoadingExpenses] = useState(false);
+  const [loadingExpenses, setLoadingExpenses] = useState(true);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
+  const { toast } = useToast();
 
-  const filteredExpenses = expensesData.filter((expense) => {
+  const fetchExpenses = async () => {
+    try {
+      setLoadingExpenses(true);
+      const data = await expenseApi.getAll();
+      setExpenses(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch expenses",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingExpenses(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const handleExpenseSubmit = () => {
+    fetchExpenses();
+  };
+
+  const filteredExpenses = expenses.filter((expense) => {
     const matchesSearch = expense.description
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -112,15 +87,15 @@ export default function ExpensesPage() {
   });
 
   const totalExpenses = filteredExpenses.reduce(
-    (sum, expense) => sum + expense.amount,
+    (sum, expense) => sum + Number(expense.amount),
     0
   );
   const internalExpenses = filteredExpenses
     .filter((e) => e.category === "internal")
-    .reduce((sum, e) => sum + e.amount, 0);
+    .reduce((sum, e) => sum + Number(e.amount), 0);
   const externalExpenses = filteredExpenses
     .filter((e) => e.category === "external")
-    .reduce((sum, e) => sum + e.amount, 0);
+    .reduce((sum, e) => sum + Number(e.amount), 0);
 
   const getCategoryIcon = (category: string) => {
     return category === "internal" ? "🏢" : "🌐";
@@ -399,7 +374,14 @@ export default function ExpensesPage() {
 
       {/* Expense Form Modal */}
       {showExpenseModal && (
-        <ExpenseFormModal onClose={() => setShowExpenseModal(false)} />
+        <ExpenseFormModal 
+        onClose={() => {
+          setShowExpenseModal(false);
+          setSelectedExpense(undefined);
+        }} 
+        onSuccess={handleExpenseSubmit}
+        expense={selectedExpense}
+      />
       )}
     </div>
   );

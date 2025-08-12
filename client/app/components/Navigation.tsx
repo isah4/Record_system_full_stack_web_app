@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Home, DollarSign, FileText, Users, Package, BarChart3, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", href: "/", active: true },
@@ -17,6 +18,7 @@ const navigationItems = [
 
 export default function Navigation() {
   const [activeItem, setActiveItem] = useState("/")
+  const { logout } = useAuth()
 
   return (
     <nav className="p-4 space-y-2">
@@ -44,6 +46,7 @@ export default function Navigation() {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 h-12 text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={logout}
         >
           <LogOut className="w-5 h-5" />
           <span>Logout</span>

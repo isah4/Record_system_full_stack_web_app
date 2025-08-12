@@ -28,16 +28,26 @@ CREATE TABLE sale_items (
   subtotal DECIMAL(10,2) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Create expense categories enum
+CREATE TYPE expense_category AS ENUM ('internal', 'external');
+
+-- Create expenses table
 CREATE TABLE expenses (
   id SERIAL PRIMARY KEY,
-  type VARCHAR(20) CHECK (type IN ('internal', 'external')),
   amount DECIMAL(10,2) NOT NULL,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  description TEXT NOT NULL,
+  category expense_category NOT NULL,
+  subcategory VARCHAR(100),
+  recurring BOOLEAN DEFAULT FALSE,
+  date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  time TIME DEFAULT CURRENT_TIME,
+  created_by INTEGER REFERENCES users(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE debts (
   id SERIAL PRIMARY KEY,
-  sale_id INTEGER REFERENCES sales(id),
+  sale_id INTEGER REFERENCES sales(id) UNIQUE,
   amount DECIMAL(10,2) NOT NULL,
   repaid_amount DECIMAL(10,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

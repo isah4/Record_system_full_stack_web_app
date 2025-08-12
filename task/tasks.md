@@ -13,7 +13,7 @@
   - [x] Create authentication UI components
   - [x] Implement JWT token management
 ## Task: SALES-001 - Sales Recording
-- Status: 🔄 In Progress
+- Status: ✅ Completed
 - Priority: High
 - Requirements:
   - Record buyer, items, quantities, totals.
@@ -26,21 +26,21 @@
   - [x] Create sales list component
   - [x] Integrate with dashboard
 ## Task: EXPENSE-001 - Expense Tracking
-- Status: Pending
+- Status: ✅ Completed
 - Priority: Medium
 - Sub-tasks:
-  - [ ] Create expense schema
-  - [ ] Build expense API endpoint
-  - [ ] Create expense form UI
+  - [x] Create expense schema
+  - [x] Build expense API endpoint
+  - [x] Create expense form UI
 ## Task: DEBT-001 - Debt Management
-- Status: Pending
+- Status: ✅ Completed
 - Priority: Medium
 - Sub-tasks:
-  - [ ] Create debt schema
-  - [ ] Build debt repayment endpoint
-  - [ ] Create debt overview UI
+  - [x] Create debt schema
+  - [x] Build debt repayment endpoint
+  - [x] Create debt overview UI
 ## Task: INVENTORY-001 - Inventory Monitoring
-- Status: 🔄 In Progress
+- Status: ✅ Completed
 - Priority: Medium
 - Sub-tasks:
   - [x] Create item schema
@@ -50,8 +50,8 @@
   - [x] Create inventory list component
   - [x] Integrate with dashboard
 ## Task: REPORT-001 - Reports Generation
-- Status: Pending
+- Status: ✅ Completed
 - Priority: Medium
 - Sub-tasks:
-  - [ ] Build daily/weekly/monthly report endpoints
-  - [ ] Create report UI with charts
+  - [x] Build daily/weekly/monthly report endpoints
+  - [x] Create report UI with charts

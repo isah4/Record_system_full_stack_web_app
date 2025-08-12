@@ -16,8 +16,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 
+import { expenseApi, type Expense, type CreateExpenseData } from "@/lib/api/expenses";
+import { useToast } from "@/hooks/use-toast";
+
 interface ExpenseFormModalProps {
   onClose: () => void;
+  onSuccess: () => void;
+  expense?: Expense;
 }
 
 const categories = {
@@ -42,7 +47,7 @@ const categories = {
   },
 };
 
-export default function ExpenseFormModal({ onClose }: ExpenseFormModalProps) {
+export default function ExpenseFormModal({ onClose, onSuccess, expense }: ExpenseFormModalProps) {
   useEffect(() => {
     // Disable scrolling on mount
     document.body.style.overflow = "hidden";
@@ -53,6 +58,15 @@ export default function ExpenseFormModal({ onClose }: ExpenseFormModalProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (expense) {
+      setAmount(expense.amount.toString());
+      setDescription(expense.description);
+      setCategory(expense.category);
+      setDate(new Date(expense.date).toISOString().split("T")[0]);
+    }
+  }, [expense]);
+
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -62,12 +76,46 @@ export default function ExpenseFormModal({ onClose }: ExpenseFormModalProps) {
   const [notes, setNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const { toast } = useToast();
+
   const handleSubmit = async () => {
+    if (!isFormValid) return;
+
     setIsProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsProcessing(false);
-    onClose();
+    try {
+      const expenseData: CreateExpenseData = {
+        amount: Number(amount),
+        description,
+        category: category as 'internal' | 'external',
+        subcategory,
+        date,
+        recurring: isRecurring
+      };
+
+      if (expense) {
+        await expenseApi.update(expense.id, expenseData);
+        toast({
+          title: "Success",
+          description: "Expense updated successfully"
+        });
+      } else {
+        await expenseApi.create(expenseData);
+        toast({
+          title: "Success",
+          description: "Expense created successfully"
+        });
+      }
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save expense",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const selectedCategory = categories[category as keyof typeof categories];

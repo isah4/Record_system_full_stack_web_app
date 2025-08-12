@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -26,58 +26,50 @@ import {
 } from "@/components/ui/select";
 import MobileNavigation from "../components/MobileNavigation";
 import DebtRepaymentModal from "../components/DebtRepaymentModal";
+import { debtApi, type Debt } from "@/lib/api/debts";
+import { useToast } from "@/hooks/use-toast";
 
-const debtsData = [
-  {
-    id: "D001",
-    customer: "John Doe",
-    phone: "+234 801 234 5678",
-    originalAmount: 125000,
-    paidAmount: 50000,
-    balance: 75000,
-    dueDate: "2024-01-20",
-    status: "overdue",
-    lastPayment: "2024-01-10",
-    saleDate: "2024-01-05",
-    items: "Rice (2), Beans (1)",
-  },
-  {
-    id: "D002",
-    customer: "Mary Johnson",
-    phone: "+234 802 345 6789",
-    originalAmount: 67500,
-    paidAmount: 20000,
-    balance: 47500,
-    dueDate: "2024-01-25",
-    status: "current",
-    lastPayment: "2024-01-15",
-    saleDate: "2024-01-08",
-    items: "Cooking Oil (3), Sugar (1)",
-  },
-  {
-    id: "D003",
-    customer: "Peter Smith",
-    phone: "+234 803 456 7890",
-    originalAmount: 52000,
-    paidAmount: 0,
-    balance: 52000,
-    dueDate: "2024-01-18",
-    status: "overdue",
-    lastPayment: null,
-    saleDate: "2024-01-12",
-    items: "Salt (2), Rice (1)",
-  },
-];
+// Mock data removed - now using real API data
 
 export default function DebtsPage() {
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedDebt, setSelectedDebt] = useState<any>(null);
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
-  // Set loadingDebts to false until real data connection is implemented
-  const [loadingDebts, setLoadingDebts] = useState(false);
+  const [loadingDebts, setLoadingDebts] = useState(true);
+  const { toast } = useToast();
 
-  const filteredDebts = debtsData.filter((debt) => {
+  const fetchDebts = async () => {
+    try {
+      setLoadingDebts(true);
+      const data = await debtApi.getAll();
+      setDebts(data);
+    } catch (error) {
+      console.error('Error fetching debts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch debts",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingDebts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDebts();
+  }, []);
+
+  const handleRepaymentSuccess = () => {
+    fetchDebts(); // Refresh debts after successful repayment
+    toast({
+      title: "Success",
+      description: "Repayment recorded successfully",
+    });
+  };
+
+  const filteredDebts = debts.filter((debt) => {
     const matchesSearch =
       debt.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       debt.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -86,11 +78,11 @@ export default function DebtsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  const totalOutstanding = debtsData.reduce(
+  const totalOutstanding = debts.reduce(
     (sum, debt) => sum + debt.balance,
     0
   );
-  const overdueCount = debtsData.filter(
+  const overdueCount = debts.filter(
     (debt) => debt.status === "overdue"
   ).length;
 
@@ -188,7 +180,7 @@ export default function DebtsPage() {
                   ₦{totalOutstanding.toLocaleString()}
                 </p>
                 <p className="text-red-100 text-xs">
-                  {debtsData.length} customers
+                  {debts.length} customers
                 </p>
               </div>
             </CardContent>
@@ -370,7 +362,7 @@ export default function DebtsPage() {
               <div>
                 <p className="text-2xl font-bold text-emerald-600">
                   ₦
-                  {debtsData
+                  {debts
                     .reduce((sum, debt) => sum + debt.paidAmount, 0)
                     .toLocaleString()}
                 </p>
@@ -378,15 +370,15 @@ export default function DebtsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-800">
-                  {debtsData.filter((debt) => debt.paidAmount > 0).length}
+                  {debts.filter((debt) => debt.paidAmount > 0).length}
                 </p>
                 <p className="text-xs text-slate-500">Paying Customers</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-orange-600">
                   {Math.round(
-                    (debtsData.reduce((sum, debt) => sum + debt.paidAmount, 0) /
-                      debtsData.reduce(
+                    (debts.reduce((sum, debt) => sum + debt.paidAmount, 0) /
+                      debts.reduce(
                         (sum, debt) => sum + debt.originalAmount,
                         0
                       )) *
@@ -412,6 +404,7 @@ export default function DebtsPage() {
             setShowRepaymentModal(false);
             setSelectedDebt(null);
           }}
+          onSuccess={handleRepaymentSuccess}
         />
       )}
     </div>

@@ -1,12 +1,8 @@
 const express = require('express');
-const { Pool } = require('pg');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const { pool } = require('../config/database');
 
 // Get all items
 router.get('/', auth, async (req, res) => {

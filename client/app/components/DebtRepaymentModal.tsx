@@ -7,26 +7,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { debtApi, type Debt } from "@/lib/api/debts";
+import { useToast } from "@/hooks/use-toast";
 
 interface DebtRepaymentModalProps {
-  debt: any;
+  debt: Debt;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
 export default function DebtRepaymentModal({
   debt,
   onClose,
+  onSuccess,
 }: DebtRepaymentModalProps) {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
 
   const handleRepayment = async () => {
-    setIsProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsProcessing(false);
-    onClose();
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid payment amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      await debtApi.recordRepayment(debt.debtId, {
+        amount: parseFloat(amount),
+        description: notes,
+      });
+      
+      toast({
+        title: "Success",
+        description: "Payment recorded successfully",
+      });
+      
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to record payment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const remainingBalance = debt.balance - (parseFloat(amount) || 0);

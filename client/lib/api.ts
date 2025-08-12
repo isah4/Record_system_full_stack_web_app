@@ -40,14 +40,25 @@ class ApiService {
       ...options,
     };
 
-    const response = await fetch(url, config);
-    const data = await response.json();
+    console.log(`Sending request to: ${url}`, { method: options.method || 'GET' });
+    
+    try {
+      const response = await fetch(url, config);
+      console.log(`Response status: ${response.status} ${response.statusText}`);
+      
+      const data = await response.json();
+      console.log('Response data:', data);
 
-    if (!response.ok) {
-      throw new Error(data.error || 'An error occurred');
+      if (!response.ok) {
+        console.error(`Request failed with status ${response.status}:`, data);
+        throw new Error(data.error || 'An error occurred');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Request error:', error);
+      throw error;
     }
-
-    return data;
   }
 
   async authenticatedRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -63,10 +74,18 @@ class ApiService {
 
   // Authentication methods
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return this.request<AuthResponse>(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    console.log('Making login request to:', API_CONFIG.ENDPOINTS.AUTH.LOGIN);
+    try {
+      const response = await this.request<AuthResponse>(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+      console.log('Login request successful');
+      return response;
+    } catch (error) {
+      console.error('Login request failed:', error);
+      throw error;
+    }
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
@@ -86,4 +105,4 @@ class ApiService {
   }
 }
 
-export const apiService = new ApiService(); 
+export const apiService = new ApiService();

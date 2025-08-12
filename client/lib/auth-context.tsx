@@ -54,10 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Attempting login with:', { email });
       const response = await apiService.login({ email, password });
+      console.log('Login response received:', { success: !!response.token });
       localStorage.setItem('token', response.token);
       setUser(response.user);
     } catch (error) {
+      console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
       throw error;
     } finally {
@@ -84,6 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     setUser(null);
     setError(null);
+    // Redirect to auth page after logout
+    window.location.href = '/auth';
   };
 
   const value = {
@@ -102,4 +107,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

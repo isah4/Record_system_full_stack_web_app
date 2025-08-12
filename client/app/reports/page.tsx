@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Download,
@@ -31,44 +31,45 @@ import { Badge } from "@/components/ui/badge";
 import MobileNavigation from "../components/MobileNavigation";
 import ReportChart from "../components/ReportChart";
 import ActivityLog from "../components/ActivityLog";
+import { reportsApi, type ReportData } from "@/lib/api/reports";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState("today");
   const [reportType, setReportType] = useState("summary");
-  // Set loadingReports to false until real data connection is implemented
-  const [loadingReports, setLoadingReports] = useState(false);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const { toast } = useToast();
 
-  const reportData = {
-    today: {
-      totalSales: 245000,
-      totalExpenses: 85000,
-      profit: 160000,
-      transactions: 15,
-      salesGrowth: 12.5,
-      expenseGrowth: -8.2,
-      profitMargin: 65.3,
-    },
-    week: {
-      totalSales: 1250000,
-      totalExpenses: 450000,
-      profit: 800000,
-      transactions: 78,
-      salesGrowth: 18.3,
-      expenseGrowth: -5.1,
-      profitMargin: 64.0,
-    },
-    month: {
-      totalSales: 5200000,
-      totalExpenses: 1800000,
-      profit: 3400000,
-      transactions: 324,
-      salesGrowth: 22.1,
-      expenseGrowth: -12.3,
-      profitMargin: 65.4,
-    },
+  const fetchReport = async (selectedPeriod: string) => {
+    try {
+      setLoadingReports(true);
+      const data = await reportsApi.getReport(selectedPeriod);
+      setReportData(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch report data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingReports(false);
+    }
   };
 
-  const currentData = reportData[period as keyof typeof reportData];
+  useEffect(() => {
+    fetchReport(period);
+  }, [period]);
+
+  const currentData = reportData || {
+    totalSales: 0,
+    totalExpenses: 0,
+    profit: 0,
+    transactions: 0,
+    salesGrowth: 0,
+    expenseGrowth: 0,
+    profitMargin: 0,
+  };
 
   const getPeriodLabel = () => {
     switch (period) {
