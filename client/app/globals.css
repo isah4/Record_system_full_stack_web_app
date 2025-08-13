@@ -180,6 +180,78 @@
   }
 }
 
+/* Extra small screens (below 370px) */
+@media screen and (max-width: 369px) {
+  /* Prevent horizontal scroll and ensure proper container sizing */
+  body {
+    overflow-x: hidden;
+    min-width: 320px; /* Minimum width to prevent extreme compression */
+  }
+  
+  /* Reduce padding and margins for small screens */
+  .xs-reduce-padding {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  /* Force single column for very small screens */
+  .xs-single-col {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Reduce header padding */
+  .xs-reduce-header-padding {
+    padding: 0.75rem !important;
+  }
+  
+  /* Reduce card padding */
+  .xs-reduce-card-padding {
+    padding: 0.75rem !important;
+  }
+  
+  /* Adjust mobile navigation for small screens */
+  .xs-mobile-nav {
+    padding: 0.25rem !important;
+  }
+  
+  .xs-mobile-nav .xs-nav-button {
+    min-height: 3.5rem !important;
+    font-size: 0.65rem !important;
+    gap: 0.125rem !important;
+  }
+  
+  .xs-mobile-nav .xs-nav-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  
+  /* Adjust text sizes for readability */
+  .xs-text-adjust h1 {
+    font-size: 1rem !important;
+  }
+  
+  .xs-text-adjust h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  .xs-text-adjust h3 {
+    font-size: 1rem !important;
+  }
+  
+  /* Button adjustments */
+  .xs-button-adjust {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Ensure minimum touch targets */
+  .xs-touch-target {
+    min-height: 2.75rem !important;
+    min-width: 2.75rem !important;
+  }
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .bg-gradient-to-r {

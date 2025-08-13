@@ -28,6 +28,7 @@ import MobileNavigation from "../components/MobileNavigation";
 import DebtRepaymentModal from "../components/DebtRepaymentModal";
 import { debtApi, type Debt } from "@/lib/api/debts";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 // Mock data removed - now using real API data
 
@@ -39,6 +40,7 @@ export default function DebtsPage() {
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
   const [loadingDebts, setLoadingDebts] = useState(true);
   const { toast } = useToast();
+  const router = useRouter();
 
   const fetchDebts = async () => {
     try {
@@ -142,9 +144,14 @@ export default function DebtsPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-red-50 to-slate-50">
       {/* Mobile Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full"
+            onClick={() => router.back()}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
@@ -169,9 +176,9 @@ export default function DebtsPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 xs-reduce-padding">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 xs-single-col">
           <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white">
             <CardContent className="p-4">
               <div className="space-y-1">

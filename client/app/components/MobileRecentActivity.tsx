@@ -38,8 +38,8 @@ const activities = [
 export default function MobileRecentActivity() {
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between px-2">
-        <h3 className="text-lg font-semibold text-slate-800">Recent Activity</h3>
+      <div className="flex items-center justify-between px-2 xs-reduce-padding">
+        <h3 className="text-lg font-semibold text-slate-800 xs-text-adjust">Recent Activity</h3>
         <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700">
           View All
           <ChevronRight className="w-4 h-4 ml-1" />
@@ -50,7 +50,7 @@ export default function MobileRecentActivity() {
         <CardContent className="p-0">
           <div className="divide-y divide-slate-100">
             {activities.map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors active:bg-slate-100">
+              <div key={index} className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors active:bg-slate-100 xs-reduce-card-padding">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   activity.color === 'emerald' ? 'bg-emerald-100' :
                   activity.color === 'orange' ? 'bg-orange-100' :

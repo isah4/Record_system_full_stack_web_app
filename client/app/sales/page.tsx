@@ -12,6 +12,7 @@ import SaleDetailsModal from "../components/SaleDetailsModal";
 
 import { useEffect } from "react";
 import { api } from "@/config/api";
+import { useRouter } from "next/navigation";
 
 interface SaleItem {
   item_id: number;
@@ -43,6 +44,7 @@ export default function SalesPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const router = useRouter();
 
   // Fetch sales with pagination (lazy loading)
   const fetchSales = async (reset = false) => {
@@ -170,19 +172,24 @@ export default function SalesPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
       {/* Mobile Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full xs-touch-target"
+            onClick={() => router.back()}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex-1">
+          <div className="flex-1 xs-text-adjust">
             <h1 className="text-xl font-bold text-slate-800">Sales</h1>
             <p className="text-sm text-slate-500">Manage transactions</p>
           </div>
           <Button
             onClick={() => setShowQuickSale(true)}
             size="sm"
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl"
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl xs-button-adjust xs-touch-target"
           >
             <Plus className="w-4 h-4 mr-1" />
             New
@@ -191,7 +198,7 @@ export default function SalesPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 xs-reduce-padding">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -206,7 +213,7 @@ export default function SalesPage() {
         {/* Sales List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-800">
+            <h2 className="text-lg font-semibold text-slate-800 xs-text-adjust">
               Today's Sales
             </h2>
             <Button variant="ghost" size="sm">

@@ -178,7 +178,7 @@ export default function InventoryPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-purple-50 to-slate-50">
       {/* Mobile Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -209,7 +209,7 @@ export default function InventoryPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 xs-reduce-padding">
         {/* Primary Add Item Action - Prominent for Mobile */}
         {totalItems === 0 && (
           <div className="px-2">
@@ -228,7 +228,7 @@ export default function InventoryPage() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 xs-single-col">
           <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
             <CardContent className="p-4">
               <div className="space-y-1">

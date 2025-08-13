@@ -194,7 +194,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
       {/* Mobile Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -222,9 +222,9 @@ export default function ReportsPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 xs-reduce-padding">
         {/* Period and Report Type Selectors */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 xs-single-col">
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="h-12 rounded-xl">
               <SelectValue />

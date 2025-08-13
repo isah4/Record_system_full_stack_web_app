@@ -39,13 +39,20 @@ interface LowStockItem {
 
 export default function Dashboard() {
   const [showQuickSale, setShowQuickSale] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
-  const [loadingLowStock, setLoadingLowStock] = useState(true);
+  const [loadingLowStock, setLoadingLowStock] = useState(false);
   const [lowStockError, setLowStockError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    // Only fetch data if user is authenticated
+    if (!isAuthenticated || isLoading) {
+      setLoadingLowStock(false);
+      setLowStockError(null);
+      return;
+    }
+
     async function fetchLowStock() {
       setLoadingLowStock(true);
       setLowStockError(null);
@@ -55,13 +62,17 @@ export default function Dashboard() {
         );
         setLowStock(data);
       } catch (err: any) {
-        setLowStockError(err.message || "Failed to fetch low stock items");
+        // Only show error if it's not an authentication error
+        if (!err.message?.includes('Access token') && !err.message?.includes('401')) {
+          setLowStockError(err.message || "Failed to fetch low stock items");
+        }
+        console.warn('Low stock fetch failed:', err.message);
       } finally {
         setLoadingLowStock(false);
       }
     }
     fetchLowStock();
-  }, []);
+  }, [isAuthenticated, isLoading]);
 
   const getUserInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -71,30 +82,30 @@ export default function Dashboard() {
     <ProtectedRoute>
       <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50 to-slate-50">
         {/* Mobile Header */}
-        <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+        <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="xs-text-adjust">
                 <h1 className="font-bold text-lg text-slate-800">BizTracker</h1>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 truncate max-w-[120px] xs:max-w-[80px]">
                   Welcome back, {user?.email}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative xs-touch-target">
                 <Bell className="w-5 h-5 text-slate-600" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="xs-touch-target">
                 <Search className="w-5 h-5 text-slate-600" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="xs-touch-target">
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm">
                         {user?.email ? getUserInitials(user.email) : "U"}
@@ -145,9 +156,9 @@ export default function Dashboard() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-24">
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-24 xs-reduce-padding">
           {/* Welcome Section */}
-          <div className="text-center">
+          <div className="text-center xs-text-adjust">
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
               Good Morning! 👋
             </h2>
@@ -157,11 +168,11 @@ export default function Dashboard() {
           </div>
 
           {/* Primary Action Button - Prominent for Mobile */}
-          <div className="px-2">
+          <div className="px-2 xs-reduce-padding">
             <Button
               onClick={() => setShowQuickSale(true)}
               size="lg"
-              className="w-full h-16 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 text-lg font-semibold rounded-2xl"
+              className="w-full h-16 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform active:scale-95 text-lg font-semibold rounded-2xl xs-button-adjust"
             >
               <Plus className="w-6 h-6 mr-3" />
               Add New Sale
@@ -173,15 +184,15 @@ export default function Dashboard() {
 
           {/* Quick Actions - Large Touch Targets */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-slate-800 px-2">
+            <h3 className="text-lg font-semibold text-slate-800 px-2 xs-text-adjust xs-reduce-padding">
               Quick Actions
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 xs-single-col">
               <div onClick={() => router.push("/sales")}>
                 {" "}
                 {/* Sales */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="p-6 text-center xs-reduce-card-padding">
                     <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-200 transition-colors">
                       <DollarSign className="w-8 h-8 text-emerald-600" />
                     </div>
@@ -196,7 +207,7 @@ export default function Dashboard() {
                 {" "}
                 {/* Expenses */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="p-6 text-center xs-reduce-card-padding">
                     <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
                       <FileText className="w-8 h-8 text-orange-600" />
                     </div>
@@ -211,7 +222,7 @@ export default function Dashboard() {
                 {" "}
                 {/* Debts */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="p-6 text-center xs-reduce-card-padding">
                     <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
                       <Users className="w-8 h-8 text-red-600" />
                     </div>
@@ -224,7 +235,7 @@ export default function Dashboard() {
                 {" "}
                 {/* Inventory */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center">
+                  <CardContent className="p-6 text-center xs-reduce-card-padding">
                     <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
                       <Package className="w-8 h-8 text-purple-600" />
                     </div>
@@ -242,14 +253,14 @@ export default function Dashboard() {
           <MobileRecentActivity />
 
           {/* Critical Alerts - Mobile Friendly */}
-          <Card className="border-red-200 bg-red-50 mx-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-red-800 flex items-center gap-2 text-lg">
+          <Card className="border-red-200 bg-red-50 mx-2 xs-reduce-padding">
+            <CardHeader className="pb-3 xs-reduce-card-padding">
+              <CardTitle className="text-red-800 flex items-center gap-2 text-lg xs-text-adjust">
                 <Package className="w-5 h-5" />
                 ⚠️ Low Stock Alert
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 xs-reduce-card-padding">
               {loadingLowStock ? (
                 <div className="p-3">Loading...</div>
               ) : lowStockError ? (

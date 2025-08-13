@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { expenseApi, type Expense } from "@/lib/api/expenses";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,6 +52,7 @@ export default function ExpensesPage() {
   const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [selectedExpense, setSelectedExpense] = useState<Expense | undefined>();
   const { toast } = useToast();
+  const router = useRouter();
 
   const fetchExpenses = async () => {
     try {
@@ -142,9 +144,14 @@ export default function ExpensesPage() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-orange-50 to-slate-50">
       {/* Mobile Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-40 shadow-sm xs-reduce-header-padding xs-reduce-padding">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="rounded-full"
+            onClick={() => router.back()}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
@@ -165,7 +172,7 @@ export default function ExpensesPage() {
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24 xs-reduce-padding">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 gap-3">
           <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">

@@ -38,14 +38,14 @@ export default function MobileNavigation() {
   return (
     <React.Fragment>
       {isNavigating && <LoadingScreen />}
-      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg xs-mobile-nav">
         <div className="flex items-center justify-around">
           {navigationItems.map((item) => (
             <Button
               key={item.href}
               variant="ghost"
               className={cn(
-                "flex-1 flex flex-col items-center gap-1 h-16 rounded-xl transition-all duration-200",
+                "flex-1 flex flex-col items-center gap-1 h-16 rounded-xl transition-all duration-200 xs-nav-button xs-touch-target",
                 pathname === item.href
                   ? "bg-gradient-to-t from-emerald-100 to-emerald-50 text-emerald-600"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -54,7 +54,7 @@ export default function MobileNavigation() {
             >
               <item.icon
                 className={cn(
-                  "w-6 h-6",
+                  "w-6 h-6 xs-nav-icon",
                   pathname === item.href ? "text-emerald-600" : "text-slate-500"
                 )}
               />

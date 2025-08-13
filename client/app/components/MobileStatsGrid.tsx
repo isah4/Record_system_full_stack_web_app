@@ -18,7 +18,11 @@ export default function MobileStatsGrid() {
         const data = await apiService.authenticatedRequest("/api/analytics/dashboard")
         setStats(data)
       } catch (err: any) {
-        setError(err.message || "Failed to fetch stats")
+        // Only show error if it's not an authentication error
+        if (!err.message?.includes('Access token') && !err.message?.includes('401')) {
+          setError(err.message || "Failed to fetch stats")
+        }
+        console.warn('Stats fetch failed:', err.message);
       } finally {
         setLoading(false)
       }
@@ -67,11 +71,11 @@ export default function MobileStatsGrid() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-slate-800 px-2">Today's Overview</h3>
-      <div className="grid grid-cols-2 gap-3">
+      <h3 className="text-lg font-semibold text-slate-800 px-2 xs-text-adjust xs-reduce-padding">Today's Overview</h3>
+      <div className="grid grid-cols-2 gap-3 xs-single-col">
         {statCards.map((stat, index) => (
           <Card key={index} className="hover:shadow-md transition-all duration-300 active:scale-95">
-            <CardContent className="p-4">
+            <CardContent className="p-4 xs-reduce-card-padding">
               <div className="flex items-center justify-between mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                   stat.color === 'emerald' ? 'bg-emerald-100' :
