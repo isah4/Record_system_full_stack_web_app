@@ -22,6 +22,7 @@ const itemsRoutes = require('./routes/items');
 const analyticsRoutes = require('./routes/analytics');
 const expensesRoutes = require('./routes/expenses');
 const debtsRoutes = require('./routes/debts');
+const activityRoutes = require('./routes/activity');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -30,6 +31,7 @@ app.use('/api/expenses', expensesRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/debts', debtsRoutes);
+app.use('/api/activity', activityRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

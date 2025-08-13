@@ -29,7 +29,7 @@ router.get("/", auth, async (req, res) => {
       JOIN sales s ON d.sale_id = s.id
       JOIN sale_items si ON s.id = si.sale_id
       JOIN items i ON si.item_id = i.id
-      WHERE d.amount > d.repaid_amount
+      WHERE (d.amount - d.repaid_amount) > 0
       GROUP BY d.id, s.id
       ORDER BY d.created_at DESC
     `);
@@ -91,7 +91,7 @@ router.post("/:id/repayment", auth, async (req, res) => {
     const debt = debtResult.rows[0];
     const newRepaidAmount = parseFloat(debt.repaid_amount) + parseFloat(amount);
 
-    // Calculate new balance first
+    // Calculate new balance: remaining amount = original debt - total repaid
     const newBalance = Math.max(0, parseFloat(debt.amount) - newRepaidAmount);
     
     // Record this repayment in payment history

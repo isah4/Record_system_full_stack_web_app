@@ -6,7 +6,6 @@ import {
   DollarSign,
   FileText,
   Users,
-  Package,
   BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import * as React from "react";
 import { useState } from "react";
 import LoadingScreen from "./LoadingScreen";
 
+// Note: Inventory removed from mobile nav to prevent overflow on small screens
+// Users can access inventory via the quick action card on the home page
 const navigationItems = [
   { icon: Home, label: "Home", href: "/", active: true },
   { icon: DollarSign, label: "Sales", href: "/sales" },

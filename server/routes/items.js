@@ -18,7 +18,7 @@ router.get('/', auth, async (req, res) => {
 // Create a new item
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, price, stock } = req.body;
+    const { name, price, stock, wholesale_price } = req.body;
 
     // Validate input
     if (!name || !price || stock === undefined) {
@@ -29,11 +29,17 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Price must be positive and stock must be non-negative' });
     }
 
+    if (wholesale_price !== undefined && wholesale_price < 0) {
+      return res.status(400).json({ error: 'Wholesale price must be non-negative' });
+    }
+
+    const wholesalePrice = wholesale_price || 0;
+
     const newItem = await pool.query(`
-      INSERT INTO items (name, price, stock)
-      VALUES ($1, $2, $3)
+      INSERT INTO items (name, price, stock, wholesale_price)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
-    `, [name, price, stock]);
+    `, [name, price, stock, wholesalePrice]);
 
     res.status(201).json(newItem.rows[0]);
   } catch (error) {
@@ -46,18 +52,24 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, stock } = req.body;
+    const { name, price, stock, wholesale_price } = req.body;
 
     if (!name || !price || stock === undefined) {
       return res.status(400).json({ error: 'Name, price, and stock are required' });
     }
 
+    if (wholesale_price !== undefined && wholesale_price < 0) {
+      return res.status(400).json({ error: 'Wholesale price must be non-negative' });
+    }
+
+    const wholesalePrice = wholesale_price !== undefined ? wholesale_price : 0;
+
     const updatedItem = await pool.query(`
       UPDATE items 
-      SET name = $1, price = $2, stock = $3
-      WHERE id = $4
+      SET name = $1, price = $2, stock = $3, wholesale_price = $4
+      WHERE id = $5
       RETURNING *
-    `, [name, price, stock, id]);
+    `, [name, price, stock, wholesalePrice, id]);
 
     if (updatedItem.rows.length === 0) {
       return res.status(404).json({ error: 'Item not found' });

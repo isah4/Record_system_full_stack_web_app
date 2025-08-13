@@ -175,12 +175,13 @@ router.post("/", auth, async (req, res) => {
       
       if (existingDebt.rows.length === 0) {
         // Only insert if no debt exists
+        // amount = total original debt amount, repaid_amount = total amount paid so far
       await client.query(
         `
         INSERT INTO debts (sale_id, amount, repaid_amount)
         VALUES ($1, $2, $3)
       `,
-          [newSale.rows[0].id, finalBalance, repaidAmount]
+          [newSale.rows[0].id, total, repaidAmount]
         );
         console.log('Debt record created successfully');
       } else {
@@ -191,7 +192,7 @@ router.post("/", auth, async (req, res) => {
           SET amount = $1, repaid_amount = $2 
           WHERE sale_id = $3
         `,
-          [finalBalance, repaidAmount, newSale.rows[0].id]
+          [total, repaidAmount, newSale.rows[0].id]
         );
         console.log('Debt record updated successfully');
       }

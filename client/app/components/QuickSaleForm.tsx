@@ -178,39 +178,64 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
           <div className="space-y-3">
             <Label className="text-base font-medium">Select Items</Label>
             <div className="space-y-3">
-              {items.map((item) => (
-                <Card
-                  key={item.id}
-                  className="border-2 hover:border-emerald-200 transition-colors"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-800 text-base">
-                          {item.name}
-                        </h4>
-                        <p className="text-emerald-600 font-bold text-lg">
-                          ₦{item.price.toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={item.stock <= 2 ? "destructive" : "secondary"}
-                        className="text-xs"
-                      >
-                        {item.stock} left
-                      </Badge>
+              {items.length === 0 ? (
+                <Card className="p-8 text-center border-dashed border-2 border-slate-300">
+                  <div className="space-y-4">
+                    <ShoppingCart className="w-12 h-12 text-slate-400 mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-600 mb-2">
+                        No Items Available
+                      </h3>
+                      <p className="text-slate-500 mb-4 text-sm">
+                        You need to add items to your inventory before creating sales
+                      </p>
                     </div>
                     <Button
-                      onClick={() => addItem(item.id)}
-                      className="w-full h-12 rounded-xl"
-                      disabled={item.stock === 0}
+                      onClick={() => {
+                        window.location.href = '/inventory';
+                      }}
+                      className="bg-purple-500 hover:bg-purple-600"
                     >
-                      <Plus className="w-5 h-5 mr-2" />
-                      Add to Sale
+                      <Plus className="w-4 h-4 mr-2" />
+                      Go to Inventory
                     </Button>
-                  </CardContent>
+                  </div>
                 </Card>
-              ))}
+              ) : (
+                items.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="border-2 hover:border-emerald-200 transition-colors"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-slate-800 text-base">
+                            {item.name}
+                          </h4>
+                          <p className="text-emerald-600 font-bold text-lg">
+                            ₦{item.price.toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge
+                          variant={item.stock <= 2 ? "destructive" : "secondary"}
+                          className="text-xs"
+                        >
+                          {item.stock} left
+                        </Badge>
+                      </div>
+                      <Button
+                        onClick={() => addItem(item.id)}
+                        className="w-full h-12 rounded-xl"
+                        disabled={item.stock === 0}
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Add to Sale
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 

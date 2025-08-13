@@ -52,9 +52,11 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
     try {
       setLoading(true);
       const response = await api.get(`/sales/${sale.id}/payment-history`);
+      console.log('Payment history response:', response.data);
       setPaymentHistory(response.data);
     } catch (error) {
       console.error('Error fetching payment history:', error);
+      setPaymentHistory([]); // Ensure we set empty array on error
     } finally {
       setLoading(false);
     }
@@ -100,17 +102,37 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'Invalid Date';
+    }
   };
 
-  const totalPaid = paymentHistory.reduce((sum, payment) => sum + payment.amount, 0);
-  const remainingBalance = sale.total - totalPaid;
+  const totalPaid = paymentHistory.reduce((sum, payment) => {
+    const amount = parseFloat(payment.amount) || 0;
+    console.log(`Payment amount: ${payment.amount} -> parsed: ${amount}`);
+    return sum + amount;
+  }, 0);
+  const remainingBalance = parseFloat(sale.total) - totalPaid;
+  
+  console.log('Sale calculation debug:', {
+    saleTotal: sale.total,
+    paymentHistoryCount: paymentHistory.length,
+    totalPaid,
+    remainingBalance,
+    isNaN: isNaN(remainingBalance)
+  });
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
@@ -160,7 +182,7 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
                 <div>
                   <p className="text-sm text-slate-600">Remaining Balance</p>
                   <p className={`font-bold text-xl ${remainingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ₦{remainingBalance.toLocaleString()}
+                    ₦{isNaN(remainingBalance) ? '0' : remainingBalance.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -222,8 +244,8 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
                             <p className="text-sm text-slate-600">{payment.description}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-emerald-600">₦{payment.amount.toLocaleString()}</p>
-                            <p className="text-xs text-slate-500">{formatDate(payment.payment_date)}</p>
+                            <p className="font-bold text-emerald-600">₦{(parseFloat(payment.amount) || 0).toLocaleString()}</p>
+                            <p className="text-xs text-slate-500">{formatDate(payment.payment_date || payment.created_at)}</p>
                           </div>
                         </div>
                       </div>
@@ -239,7 +261,7 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-emerald-600">Total Paid</p>
-                      <p className="font-bold text-xl text-emerald-800">₦{totalPaid.toLocaleString()}</p>
+                      <p className="font-bold text-xl text-emerald-800">₦{isNaN(totalPaid) ? '0' : totalPaid.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
