@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface LoginFormProps {
   onToggleMode: () => void;
@@ -19,12 +20,17 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, error, clearError } = useAuth();
+  const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
+      handleError("Please fill in all fields", {
+        title: "Validation Error",
+        description: "Both email and password are required."
+      });
       return;
     }
 
@@ -33,9 +39,14 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
 
     try {
       await login(email, password);
+      handleSuccess("Login successful! Welcome back.");
       router.push('/');
     } catch (error) {
-      // Error is handled by the auth context
+      // Error is handled by the auth context, but we can also show toast
+      handleError(error, {
+        title: "Login Failed",
+        description: "Please check your credentials and try again."
+      });
     } finally {
       setIsSubmitting(false);
     }

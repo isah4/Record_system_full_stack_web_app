@@ -4,34 +4,35 @@ import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, AlertTriangl
 import { Card, CardContent } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { apiService } from "@/lib/api"
+import { useErrorHandler } from "@/hooks/use-error-handler"
 
 export default function MobileStatsGrid() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { handleError } = useErrorHandler()
 
   useEffect(() => {
     async function fetchStats() {
       setLoading(true)
-      setError(null)
       try {
         const data = await apiService.authenticatedRequest("/api/analytics/dashboard")
         setStats(data)
       } catch (err: any) {
         // Only show error if it's not an authentication error
         if (!err.message?.includes('Access token') && !err.message?.includes('401')) {
-          setError(err.message || "Failed to fetch stats")
+          handleError(err, {
+            title: "Failed to load statistics",
+            description: "Could not fetch dashboard statistics. Please try refreshing the page."
+          })
         }
-        console.warn('Stats fetch failed:', err.message);
       } finally {
         setLoading(false)
       }
     }
     fetchStats()
-  }, [])
+  }, [handleError])
 
   if (loading) return <div className="px-2 py-4">Loading...</div>
-  if (error) return <div className="px-2 py-4 text-red-500">{error}</div>
   if (!stats) return null
 
   const statCards = [

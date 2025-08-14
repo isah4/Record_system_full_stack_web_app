@@ -30,6 +30,7 @@ import MobileStatsGrid from "./components/MobileStatsGrid";
 import MobileRecentActivity from "./components/MobileRecentActivity";
 import { apiService } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useErrorHandler } from "@/hooks/use-error-handler";
 
 interface LowStockItem {
   id: number;
@@ -42,20 +43,18 @@ export default function Dashboard() {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
   const [loadingLowStock, setLoadingLowStock] = useState(false);
-  const [lowStockError, setLowStockError] = useState<string | null>(null);
   const router = useRouter();
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
     // Only fetch data if user is authenticated
     if (!isAuthenticated || isLoading) {
       setLoadingLowStock(false);
-      setLowStockError(null);
       return;
     }
 
     async function fetchLowStock() {
       setLoadingLowStock(true);
-      setLowStockError(null);
       try {
         const data = await apiService.authenticatedRequest<LowStockItem[]>(
           "/api/items/low-stock"
@@ -64,15 +63,17 @@ export default function Dashboard() {
       } catch (err: any) {
         // Only show error if it's not an authentication error
         if (!err.message?.includes('Access token') && !err.message?.includes('401')) {
-          setLowStockError(err.message || "Failed to fetch low stock items");
+          handleError(err, {
+            title: "Failed to load low stock items",
+            description: "Could not fetch low stock alerts. Please try refreshing the page."
+          });
         }
-        console.warn('Low stock fetch failed:', err.message);
       } finally {
         setLoadingLowStock(false);
       }
     }
     fetchLowStock();
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, handleError]);
 
   const getUserInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -263,8 +264,6 @@ export default function Dashboard() {
             <CardContent className="space-y-3 xs-reduce-card-padding">
               {loadingLowStock ? (
                 <div className="p-3">Loading...</div>
-              ) : lowStockError ? (
-                <div className="p-3 text-red-500">{lowStockError}</div>
               ) : lowStock.length === 0 ? (
                 <div className="p-3 text-slate-500">No low stock items.</div>
               ) : (

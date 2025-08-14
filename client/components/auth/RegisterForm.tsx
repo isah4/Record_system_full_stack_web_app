@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface RegisterFormProps {
   onToggleMode: () => void;
@@ -21,6 +22,7 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState('');
   const { register, error, clearError } = useAuth();
+  const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
 
   const validateForm = () => {
@@ -55,9 +57,14 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
 
     try {
       await register(email, password);
+      handleSuccess("Registration successful! Welcome to BizTracker.");
       router.push('/');
     } catch (error) {
-      // Error is handled by the auth context
+      // Error is handled by the auth context, but also show toast
+      handleError(error, {
+        title: "Registration Failed",
+        description: "Could not create your account. Please try again."
+      });
     } finally {
       setIsSubmitting(false);
     }

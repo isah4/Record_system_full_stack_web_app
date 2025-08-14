@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/config/api";
+import { useErrorHandler } from "@/hooks/use-error-handler";
 
 interface Item {
   id: number;
@@ -23,6 +24,7 @@ interface ItemFormModalProps {
 }
 
 export default function ItemFormModal({ item, onClose, onSuccess }: ItemFormModalProps) {
+  const { handleError, handleSuccess } = useErrorHandler();
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -93,9 +95,11 @@ export default function ItemFormModal({ item, onClose, onSuccess }: ItemFormModa
       if (item) {
         // Update existing item
         await api.put(`/items/${item.id}`, payload);
+        handleSuccess("Item updated successfully!");
       } else {
         // Create new item
         await api.post("/items", payload);
+        handleSuccess("Item created successfully!");
       }
 
       onSuccess();
@@ -105,8 +109,17 @@ export default function ItemFormModal({ item, onClose, onSuccess }: ItemFormModa
       // Handle specific validation errors from backend
       if (error.response?.data?.error) {
         setErrors({ general: error.response.data.error });
+        handleError(error.response.data.error, {
+          title: "Validation Error",
+          showToast: true
+        });
       } else {
-        setErrors({ general: "Failed to save item. Please try again." });
+        const errorMessage = "Failed to save item. Please try again.";
+        setErrors({ general: errorMessage });
+        handleError(error, {
+          title: "Save Failed",
+          description: errorMessage
+        });
       }
     } finally {
       setLoading(false);

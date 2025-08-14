@@ -57,7 +57,17 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('Request error:', error);
-      throw error;
+      
+      // Enhanced error handling
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error. Please check your internet connection.');
+      }
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('An unexpected error occurred. Please try again.');
     }
   }
 

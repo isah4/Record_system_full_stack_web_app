@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/config/api";
+import { useErrorHandler } from "@/hooks/use-error-handler";
 import * as React from "react";
 
 interface QuickSaleFormProps {
@@ -32,7 +33,8 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
     Array<{ id: number; name: string; price: number; stock: number }>
   >([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const { handleError, handleSuccess } = useErrorHandler();
 
   // Prevent body scrolling when modal is open
   useEffect(() => {
@@ -77,34 +79,48 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
   useEffect(() => {
     async function fetchItems() {
       setLoading(true);
-      setError(null);
       try {
-              const response = await api.get("/items");
-      setItems(response.data);
+        const response = await api.get("/items");
+        setItems(response.data);
       } catch (err: any) {
-        setError(err.message || "Failed to fetch items");
+        handleError(err, {
+          title: "Failed to load items",
+          description: "Could not fetch inventory items. Please try again."
+        });
       } finally {
         setLoading(false);
       }
     }
     fetchItems();
-  }, []);
+  }, [handleError]);
 
   const handleSubmit = async () => {
-    if (!customerName || selectedItems.length === 0 || !paymentStatus) return;
+    if (!customerName || selectedItems.length === 0 || !paymentStatus) {
+      handleError("Please fill in all required fields", {
+        title: "Validation Error",
+        description: "Customer name, items, and payment status are required."
+      });
+      return;
+    }
     
     // Validate amount paid for partial payments
     if (paymentStatus === "partial" && (!amountPaid || parseFloat(amountPaid) <= 0)) {
-      setError("Please enter a valid amount paid for partial payment");
+      handleError("Invalid payment amount", {
+        title: "Validation Error",
+        description: "Please enter a valid amount paid for partial payment."
+      });
       return;
     }
     
     if (paymentStatus === "partial" && parseFloat(amountPaid) >= calculateTotal()) {
-      setError("Amount paid cannot be greater than or equal to total amount");
+      handleError("Invalid payment amount", {
+        title: "Validation Error", 
+        description: "Amount paid cannot be greater than or equal to total amount."
+      });
       return;
     }
     
-    setError(null);
+    setSubmitting(true);
     try {
       // Send all items in a single request
       const total = calculateTotal();
@@ -124,9 +140,16 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
       console.log('Sending sale data:', saleData);
       
       await api.post("/sales", saleData);
+      
+      handleSuccess("Sale recorded successfully!");
       onClose();
     } catch (err: any) {
-      setError(err.message || "Failed to record sale");
+      handleError(err, {
+        title: "Failed to record sale",
+        description: "Could not save the sale. Please try again."
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -167,12 +190,7 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
             />
           </div>
 
-          {/* Error Display */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
+
 
           {/* Item Selection */}
           <div className="space-y-3">
@@ -384,6 +402,7 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
               <Button
                 className="flex-1 h-14 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-base font-semibold"
                 disabled={
+                  submitting ||
                   !customerName || 
                   selectedItems.length === 0 || 
                   !paymentStatus ||
@@ -391,8 +410,17 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
                 }
                 onClick={handleSubmit}
               >
-                <Check className="w-5 h-5 mr-2" />
-                Record Sale
+                {submitting ? (
+                  <>
+                    <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Recording...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5 mr-2" />
+                    Record Sale
+                  </>
+                )}
               </Button>
             </div>
           </div>
