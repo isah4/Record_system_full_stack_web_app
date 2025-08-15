@@ -245,99 +245,99 @@ export default function ReportsPage() {
         {/* Summary/metrics and performance sections only in summary mode */}
         {reportType === "summary" && reportData && (
           <>
-            <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <TrendingUp className="w-5 h-5" />
-                  {getPeriodLabel()}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+          <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <TrendingUp className="w-5 h-5" />
+                {getPeriodLabel()}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                     <p className="text-emerald-100 text-sm">Total Sales</p>
                     <p className="text-2xl font-bold">₦{reportData.total_sales?.toLocaleString()}</p>
-                  </div>
-                  <div>
+                </div>
+                <div>
                     <p className="text-emerald-100 text-sm">Profit</p>
                     <p className={`text-2xl font-bold ${reportData.profit >= 0 ? 'text-white' : 'text-red-200'}`}>₦{reportData.profit?.toLocaleString()}</p>
                   </div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-emerald-100">
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-emerald-100">
                     {reportData.summary?.find(s => s.activity_type === 'sale')?.count || 0} sales
-                  </span>
-                  <span className="text-emerald-100">
+                </span>
+                <span className="text-emerald-100">
                     {reportData.summary?.find(s => s.activity_type === 'expense')?.count || 0} expenses
-                  </span>
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <DollarSign className="w-6 h-6 text-emerald-600" />
                 </div>
+                <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
+                <p className="text-2xl font-bold text-emerald-600">
+                    ₦{reportData.total_sales?.toLocaleString()}
+                </p>
+                  <p className="text-sm text-slate-500">{reportData.summary?.find(s => s.activity_type === 'sale')?.count || 0} sales</p>
               </CardContent>
             </Card>
-            <div className="grid grid-cols-2 gap-3">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <DollarSign className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
-                  <p className="text-2xl font-bold text-emerald-600">
-                    ₦{reportData.total_sales?.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-slate-500">{reportData.summary?.find(s => s.activity_type === 'sale')?.count || 0} sales</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <TrendingUp className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold text-slate-800 mb-1">Gross Profit</h3>
-                  <p className="text-2xl font-bold text-blue-600">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrendingUp className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-slate-800 mb-1">Gross Profit</h3>
+                <p className="text-2xl font-bold text-blue-600">
                     ₦{reportData.profit?.toLocaleString()}
-                  </p>
+                </p>
                   <p className="text-sm text-slate-500">Profit</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <TrendingDown className="w-6 h-6 text-red-600" />
-                  </div>
-                  <h3 className="font-semibold text-slate-800 mb-1">Expenses</h3>
-                  <p className="text-2xl font-bold text-red-600">
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <TrendingDown className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="font-semibold text-slate-800 mb-1">Expenses</h3>
+                <p className="text-2xl font-bold text-red-600">
                     ₦{reportData.total_expenses?.toLocaleString()}
-                  </p>
+                </p>
                   <p className="text-sm text-slate-500">Total Expenses</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
                   <div className={`w-12 h-12 ${reportData.profit >= 0 ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-3`}>
                     <BarChart3 className={`w-6 h-6 ${reportData.profit >= 0 ? 'text-green-600' : 'text-orange-600'}`} />
-                  </div>
-                  <h3 className="font-semibold text-slate-800 mb-1">Net Profit</h3>
+                </div>
+                <h3 className="font-semibold text-slate-800 mb-1">Net Profit</h3>
                   <p className={`text-2xl font-bold ${reportData.profit >= 0 ? 'text-green-600' : 'text-orange-600'}`}>
                     ₦{reportData.profit?.toLocaleString()}
                   </p>
                   <p className="text-sm text-slate-500">Profit</p>
-                </CardContent>
-              </Card>
-            </div>
+              </CardContent>
+            </Card>
+          </div>
             <ReportChart sales={reportData.total_sales} expenses={reportData.total_expenses} period={period} />
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Additional Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-blue-600">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Additional Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-blue-600">
                       ₦{reportData.total_sales?.toLocaleString()}
-                    </p>
+                  </p>
                     <p className="text-sm text-slate-500">Total Sales</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-red-600">
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-600">
                       ₦{reportData.total_expenses?.toLocaleString()}
                     </p>
                     <p className="text-sm text-slate-500">Total Expenses</p>
@@ -351,12 +351,12 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
                       ₦{reportData.outstanding_debts?.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-slate-500">Outstanding Debts</p>
-                  </div>
+                  </p>
+                  <p className="text-sm text-slate-500">Outstanding Debts</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
             <RecentActivityList activities={activities.slice(0, 4)} />
           </>
         )}
