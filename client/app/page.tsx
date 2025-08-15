@@ -27,10 +27,11 @@ import { useAuth } from "@/lib/auth-context";
 import MobileNavigation from "./components/MobileNavigation";
 import QuickSaleForm from "./components/QuickSaleForm";
 import MobileStatsGrid from "./components/MobileStatsGrid";
-import MobileRecentActivity from "./components/MobileRecentActivity";
+import RecentActivityList from "./components/RecentActivityList";
 import { apiService } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useErrorHandler } from "@/hooks/use-error-handler";
+import { api } from "@/config/api";
 
 interface LowStockItem {
   id: number;
@@ -38,11 +39,24 @@ interface LowStockItem {
   stock: number;
 }
 
+interface ActivityItem {
+  activity_type: string;
+  reference_id: number;
+  description: string;
+  amount: number;
+  status: string;
+  activity_date: string;
+  details: any;
+}
+
 export default function Dashboard() {
   const [showQuickSale, setShowQuickSale] = useState(false);
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
   const [loadingLowStock, setLoadingLowStock] = useState(false);
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
   const router = useRouter();
   const { handleError } = useErrorHandler();
 
@@ -74,6 +88,22 @@ export default function Dashboard() {
     }
     fetchLowStock();
   }, [isAuthenticated, isLoading, handleError]);
+
+  useEffect(() => {
+    async function fetchRecentActivities() {
+      setLoadingActivities(true);
+      setActivityError(null);
+      try {
+        const res = await api.get("/activity?limit=4");
+        setRecentActivities(res.data);
+      } catch (err: any) {
+        setActivityError("Could not load recent activity");
+      } finally {
+        setLoadingActivities(false);
+      }
+    }
+    fetchRecentActivities();
+  }, []);
 
   const getUserInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -251,7 +281,15 @@ export default function Dashboard() {
           </div>
 
           {/* Recent Activity - Mobile Optimized */}
-          <MobileRecentActivity />
+          <div>
+            {loadingActivities ? (
+              <Card className="mb-4"><CardContent className="p-4 text-center text-slate-400">Loading recent activity...</CardContent></Card>
+            ) : activityError ? (
+              <Card className="mb-4"><CardContent className="p-4 text-center text-red-400">{activityError}</CardContent></Card>
+            ) : (
+              <RecentActivityList activities={recentActivities} />
+            )}
+          </div>
 
           {/* Critical Alerts - Mobile Friendly */}
           <Card className="border-red-200 bg-red-50 mx-2 xs-reduce-padding">

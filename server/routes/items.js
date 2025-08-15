@@ -42,6 +42,22 @@ router.post('/', auth, async (req, res) => {
     `, [name, price, stock, wholesalePrice]);
 
     res.status(201).json(newItem.rows[0]);
+
+    // Log new item creation in activity_log
+    await pool.query(
+      `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        'new_item',
+        newItem.rows[0].id,
+        name,
+        price,
+        'created',
+        newItem.rows[0].created_at,
+        JSON.stringify({ stock, wholesale_price: wholesalePrice }),
+        req.user.userId
+      ]
+    );
   } catch (error) {
     console.error('Create item error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -76,6 +92,23 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     res.json(updatedItem.rows[0]);
+
+    // Log stock addition if stock increased
+    if (stock > oldStock) {
+      await pool.query(
+        `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+         VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
+        [
+          'stock_addition',
+          id,
+          itemName,
+          stock - oldStock,
+          'added',
+          JSON.stringify({ old_stock: oldStock, new_stock: stock, price: itemPrice, wholesale_price: itemWholesale }),
+          req.user.userId
+        ]
+      );
+    }
   } catch (error) {
     console.error('Update item error:', error);
     res.status(500).json({ error: 'Internal server error' });

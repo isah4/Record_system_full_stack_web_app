@@ -12,134 +12,16 @@ router.get("/", auth, async (req, res) => {
     let queryParams;
     
     if (date) {
-      // When date is specified, filter each table separately
       query = `
-        SELECT * FROM (
-          -- Sales activities
-          SELECT 
-            'sale' as activity_type,
-            s.id as reference_id,
-            s.buyer_name as description,
-            s.total as amount,
-            s.payment_status as status,
-            s.created_at as activity_date,
-            json_build_object(
-              'customer', s.buyer_name,
-              'total', s.total,
-              'payment_status', s.payment_status,
-              'balance', s.balance
-            ) as details
-          FROM sales s
-          WHERE DATE(s.created_at) = $1
-          
-          UNION ALL
-          
-          -- Payment history activities  
-          SELECT 
-            'payment' as activity_type,
-            ph.id as reference_id,
-            CASE 
-              WHEN ph.payment_type = 'initial' THEN 'Initial payment received'
-              WHEN ph.payment_type = 'debt_repayment' THEN 'Debt payment received'
-              WHEN ph.payment_type = 'full_settlement' THEN 'Debt fully settled'
-              ELSE 'Payment received'
-            END as description,
-            ph.amount,
-            ph.payment_type as status,
-            ph.payment_date as activity_date,
-            json_build_object(
-              'sale_id', ph.sale_id,
-              'payment_type', ph.payment_type,
-              'amount', ph.amount,
-              'description', ph.description
-            ) as details
-          FROM payment_history ph
-          WHERE DATE(ph.payment_date) = $1
-          
-          UNION ALL
-          
-          -- Expense activities
-          SELECT 
-            'expense' as activity_type,
-            e.id as reference_id,
-            e.description,
-            e.amount,
-            CAST(e.category as VARCHAR) as status,
-            e.date as activity_date,
-            json_build_object(
-              'category', e.category,
-              'amount', e.amount,
-              'description', e.description,
-              'subcategory', e.subcategory
-            ) as details
-          FROM expenses e
-          WHERE DATE(e.date) = $1
-        ) combined_activities
+        SELECT * FROM activity_log
+        WHERE DATE(activity_date) = $1
         ORDER BY activity_date DESC
         LIMIT $2
       `;
       queryParams = [date, limit];
     } else {
-      // When no date filter, get all recent activities
       query = `
-        SELECT * FROM (
-          -- Sales activities
-          SELECT 
-            'sale' as activity_type,
-            s.id as reference_id,
-            s.buyer_name as description,
-            s.total as amount,
-            s.payment_status as status,
-            s.created_at as activity_date,
-            json_build_object(
-              'customer', s.buyer_name,
-              'total', s.total,
-              'payment_status', s.payment_status,
-              'balance', s.balance
-            ) as details
-          FROM sales s
-          
-          UNION ALL
-          
-          -- Payment history activities  
-          SELECT 
-            'payment' as activity_type,
-            ph.id as reference_id,
-            CASE 
-              WHEN ph.payment_type = 'initial' THEN 'Initial payment received'
-              WHEN ph.payment_type = 'debt_repayment' THEN 'Debt payment received'
-              WHEN ph.payment_type = 'full_settlement' THEN 'Debt fully settled'
-              ELSE 'Payment received'
-            END as description,
-            ph.amount,
-            ph.payment_type as status,
-            ph.payment_date as activity_date,
-            json_build_object(
-              'sale_id', ph.sale_id,
-              'payment_type', ph.payment_type,
-              'amount', ph.amount,
-              'description', ph.description
-            ) as details
-          FROM payment_history ph
-          
-          UNION ALL
-          
-          -- Expense activities
-          SELECT 
-            'expense' as activity_type,
-            e.id as reference_id,
-            e.description,
-            e.amount,
-            CAST(e.category as VARCHAR) as status,
-            e.date as activity_date,
-            json_build_object(
-              'category', e.category,
-              'amount', e.amount,
-              'description', e.description,
-              'subcategory', e.subcategory
-            ) as details
-          FROM expenses e
-        ) combined_activities
+        SELECT * FROM activity_log
         ORDER BY activity_date DESC
         LIMIT $1
       `;
@@ -258,6 +140,62 @@ router.get("/daily-summary", auth, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error("Get daily summary error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get summary report for a given date or period
+router.get("/summary", auth, async (req, res) => {
+  try {
+    const { date, start, end } = req.query;
+    let dateFilter = '';
+    let params = [];
+    if (date) {
+      dateFilter = 'WHERE DATE(activity_date) = $1';
+      params = [date];
+    } else if (start && end) {
+      dateFilter = 'WHERE activity_date >= $1 AND activity_date <= $2';
+      params = [start, end];
+    }
+    // Aggregate totals by activity type
+    const summary = await pool.query(
+      `SELECT activity_type, SUM(amount) as total_amount, COUNT(*) as count
+       FROM activity_log
+       ${dateFilter}
+       GROUP BY activity_type`
+      , params
+    );
+    // Calculate total sales and expenses for profit
+    const sales = summary.rows.find(r => r.activity_type === 'sale')?.total_amount || 0;
+    const expenses = summary.rows.find(r => r.activity_type === 'expense')?.total_amount || 0;
+    // Outstanding debts: sum of sales with payment_status not 'paid'
+    let outstandingDebts = 0;
+    if (date || (start && end)) {
+      const debtsResult = await pool.query(
+        `SELECT SUM((details->>'balance')::numeric) as total_outstanding
+         FROM activity_log
+         WHERE activity_type = 'sale' AND (details->>'balance')::numeric > 0
+         ${dateFilter ? 'AND ' + dateFilter.replace('WHERE', '') : ''}`,
+        params
+      );
+      outstandingDebts = debtsResult.rows[0]?.total_outstanding || 0;
+    } else {
+      const debtsResult = await pool.query(
+        `SELECT SUM((details->>'balance')::numeric) as total_outstanding
+         FROM activity_log
+         WHERE activity_type = 'sale' AND (details->>'balance')::numeric > 0`
+      );
+      outstandingDebts = debtsResult.rows[0]?.total_outstanding || 0;
+    }
+    res.json({
+      summary: summary.rows,
+      total_sales: sales,
+      total_expenses: expenses,
+      profit: sales - expenses,
+      outstanding_debts: outstandingDebts
+    });
+  } catch (error) {
+    console.error("Get summary error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

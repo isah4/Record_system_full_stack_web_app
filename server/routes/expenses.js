@@ -102,6 +102,22 @@ router.post('/', auth, async (req, res) => {
         );
         
         res.status(201).json(result.rows[0]);
+
+        // Log expense activity in activity_log
+        await db.query(
+            `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+                'expense',
+                result.rows[0].id,
+                description,
+                amount,
+                category,
+                result.rows[0].created_at,
+                JSON.stringify({ subcategory: subcategory || null, recurring: recurring || false }),
+                req.user.userId
+            ]
+        );
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

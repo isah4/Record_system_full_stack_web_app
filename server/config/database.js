@@ -1,6 +1,14 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Debug: print the DATABASE_URL and its type (mask password)
+if (process.env.DATABASE_URL) {
+  const url = process.env.DATABASE_URL.replace(/(postgres:\/\/[^:]+:)[^@]+(@)/, '$1*****$2');
+  console.log('DATABASE_URL:', url, '| type:', typeof process.env.DATABASE_URL);
+} else {
+  console.log('DATABASE_URL is not set');
+}
+
 // Create the connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

@@ -202,6 +202,22 @@ router.post("/", auth, async (req, res) => {
 
     await client.query("COMMIT");
 
+    // Log sale activity in activity_log
+    await client.query(
+      `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        'sale',
+        newSale.rows[0].id,
+        buyer_name,
+        total,
+        payment_status,
+        newSale.rows[0].created_at,
+        JSON.stringify({ items, balance: finalBalance }),
+        req.user.userId
+      ]
+    );
+
     // Fetch the complete sale with items
     const completeSale = await client.query(
       `

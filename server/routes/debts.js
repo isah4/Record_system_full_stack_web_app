@@ -126,6 +126,28 @@ router.post("/:id/repayment", auth, async (req, res) => {
 
     await client.query("COMMIT");
 
+    // Get buyer_name from sales
+    const saleResult = await client.query(
+      "SELECT buyer_name FROM sales WHERE id = $1",
+      [debt.sale_id]
+    );
+    const buyerName = saleResult.rows.length > 0 ? saleResult.rows[0].buyer_name : null;
+
+    // Log debt repayment activity in activity_log
+    await client.query(
+      `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+       VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
+      [
+        'debt_repayment',
+        id,
+        paymentDescription,
+        amount,
+        paymentType,
+        JSON.stringify({ sale_id: debt.sale_id, newBalance, totalRepaid: newRepaidAmount, buyer_name: buyerName }),
+        req.user.userId
+      ]
+    );
+
     res.json({ 
       message: "Repayment recorded successfully",
       newBalance,

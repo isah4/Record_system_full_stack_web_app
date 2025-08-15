@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import MobileNavigation from "../components/MobileNavigation";
 import ReportChart from "../components/ReportChart";
 import ActivityLog from "../components/ActivityLog";
+import RecentActivityList from "../components/RecentActivityList";
 import { api } from "@/config/api";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -48,14 +49,15 @@ interface ActivityItem {
 }
 
 interface ReportData {
-  revenue: number;
-  expenses: number;
+  summary: Array<{
+    activity_type: string;
+    total_amount: number;
+    count: number;
+  }>;
+  total_sales: number;
+  total_expenses: number;
   profit: number;
-  netProfit: number;
-  salesCount: number;
-  paymentsReceived: number;
-  outstandingDebts: number;
-  profitMargin: number;
+  outstanding_debts: number;
 }
 
 export default function ReportsPage() {
@@ -70,15 +72,13 @@ export default function ReportsPage() {
   const fetchReport = async (selectedPeriod: string) => {
     try {
       setLoadingReports(true);
-      
       // Calculate date range based on period
       const today = new Date();
       let startDate = today.toISOString().split('T')[0];
       let endDate = today.toISOString().split('T')[0];
-      
       if (selectedPeriod === "week") {
         const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        weekStart.setDate(today.getDate() - today.getDay());
         startDate = weekStart.toISOString().split('T')[0];
         endDate = today.toISOString().split('T')[0];
       } else if (selectedPeriod === "month") {
@@ -86,42 +86,12 @@ export default function ReportsPage() {
         startDate = monthStart.toISOString().split('T')[0];
         endDate = today.toISOString().split('T')[0];
       }
-
-      // Fetch profit analysis and daily summary
-      const [profitResponse, summaryResponse, activitiesResponse] = await Promise.all([
-        api.get(`/activity/profit-analysis?startDate=${startDate}&endDate=${endDate}`),
-        api.get(`/activity/daily-summary?date=${endDate}`),
+      // Fetch summary and activities
+      const [summaryResponse, activitiesResponse] = await Promise.all([
+        api.get(`/activity/summary?${selectedPeriod === "today" ? `date=${endDate}` : `start=${startDate}&end=${endDate}`}`),
         api.get(`/activity?${selectedPeriod === "today" ? `date=${endDate}` : ""}&limit=50`)
       ]);
-
-      const profitData = profitResponse.data;
-      const summary = summaryResponse.data;
-      
-      // Aggregate data for the period
-      const aggregatedData = {
-        revenue: selectedPeriod === "today" 
-          ? summary.daily_revenue 
-          : profitData.reduce((sum: number, day: any) => sum + parseFloat(day.total_revenue || 0), 0),
-        expenses: selectedPeriod === "today"
-          ? summary.daily_expenses
-          : summary.daily_expenses, // For now, use daily expenses - could be enhanced
-        profit: selectedPeriod === "today"
-          ? summary.daily_profit
-          : profitData.reduce((sum: number, day: any) => sum + parseFloat(day.total_profit || 0), 0),
-        netProfit: selectedPeriod === "today"
-          ? summary.net_profit
-          : profitData.reduce((sum: number, day: any) => sum + parseFloat(day.total_profit || 0), 0) - summary.daily_expenses,
-        salesCount: selectedPeriod === "today"
-          ? summary.daily_sales_count
-          : profitData.reduce((sum: number, day: any) => sum + parseInt(day.total_sales || 0), 0),
-        paymentsReceived: summary.daily_payments,
-        outstandingDebts: summary.total_outstanding,
-        profitMargin: selectedPeriod === "today"
-          ? (summary.daily_revenue > 0 ? (summary.daily_profit / summary.daily_revenue) * 100 : 0)
-          : profitData.length > 0 ? profitData.reduce((sum: number, day: any) => sum + parseFloat(day.avg_profit_margin || 0), 0) / profitData.length : 0
-      };
-
-      setReportData(aggregatedData);
+      setReportData(summaryResponse.data);
       setActivities(activitiesResponse.data);
     } catch (error) {
       console.error("Error fetching report:", error);
@@ -272,143 +242,129 @@ export default function ReportsPage() {
           </Select>
         </div>
 
-        {/* Key Metrics Overview */}
-        {reportData && (
-          <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <TrendingUp className="w-5 h-5" />
-                {getPeriodLabel()}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-emerald-100 text-sm">Total Revenue</p>
-                  <p className="text-2xl font-bold">₦{reportData.revenue.toLocaleString()}</p>
+        {/* Summary/metrics and performance sections only in summary mode */}
+        {reportType === "summary" && reportData && (
+          <>
+            <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <TrendingUp className="w-5 h-5" />
+                  {getPeriodLabel()}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-emerald-100 text-sm">Total Sales</p>
+                    <p className="text-2xl font-bold">₦{reportData.total_sales?.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-emerald-100 text-sm">Profit</p>
+                    <p className={`text-2xl font-bold ${reportData.profit >= 0 ? 'text-white' : 'text-red-200'}`}>₦{reportData.profit?.toLocaleString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-emerald-100 text-sm">Net Profit</p>
-                  <p className={`text-2xl font-bold ${reportData.netProfit >= 0 ? 'text-white' : 'text-red-200'}`}>
-                    ₦{reportData.netProfit.toLocaleString()}
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-100">
+                    {reportData.summary?.find(s => s.activity_type === 'sale')?.count || 0} sales
+                  </span>
+                  <span className="text-emerald-100">
+                    {reportData.summary?.find(s => s.activity_type === 'expense')?.count || 0} expenses
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-2 gap-3">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <DollarSign className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
+                  <p className="text-2xl font-bold text-emerald-600">
+                    ₦{reportData.total_sales?.toLocaleString()}
                   </p>
-                </div>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-emerald-100">
-                  {reportData.salesCount} transactions
-                </span>
-                <span className="text-emerald-100">
-                  {reportData.profitMargin.toFixed(1)}% margin
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Performance Cards */}
-        {reportData && (
-          <div className="grid grid-cols-2 gap-3">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <DollarSign className="w-6 h-6 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
-                <p className="text-2xl font-bold text-emerald-600">
-                  ₦{reportData.revenue.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-500">{reportData.salesCount} transactions</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <TrendingUp className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-slate-800 mb-1">Gross Profit</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  ₦{reportData.profit.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-500">{reportData.profitMargin.toFixed(1)}% margin</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <TrendingDown className="w-6 h-6 text-red-600" />
-                </div>
-                <h3 className="font-semibold text-slate-800 mb-1">Expenses</h3>
-                <p className="text-2xl font-bold text-red-600">
-                  ₦{reportData.expenses.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-500">Operating costs</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className={`w-12 h-12 ${
-                  reportData.netProfit >= 0 ? 'bg-green-100' : 'bg-orange-100'
-                } rounded-full flex items-center justify-center mx-auto mb-3`}>
-                  <BarChart3 className={`w-6 h-6 ${
-                    reportData.netProfit >= 0 ? 'text-green-600' : 'text-orange-600'
-                  }`} />
-                </div>
-                <h3 className="font-semibold text-slate-800 mb-1">Net Profit</h3>
-                <p className={`text-2xl font-bold ${
-                  reportData.netProfit >= 0 ? 'text-green-600' : 'text-orange-600'
-                }`}>
-                  ₦{reportData.netProfit.toLocaleString()}
-                </p>
-                <p className="text-sm text-slate-500">After expenses</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Charts Section */}
-        {reportData && (
-          <ReportChart 
-            sales={reportData.revenue} 
-            expenses={reportData.expenses} 
-            period={period} 
-          />
-        )}
-
-        {/* Additional Metrics */}
-        {reportData && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Additional Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
+                  <p className="text-sm text-slate-500">{reportData.summary?.find(s => s.activity_type === 'sale')?.count || 0} sales</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <TrendingUp className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Gross Profit</h3>
                   <p className="text-2xl font-bold text-blue-600">
-                    ₦{reportData.paymentsReceived.toLocaleString()}
+                    ₦{reportData.profit?.toLocaleString()}
                   </p>
-                  <p className="text-sm text-slate-500">Payments Received</p>
-                </div>
-                <div>
+                  <p className="text-sm text-slate-500">Profit</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <TrendingDown className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Expenses</h3>
                   <p className="text-2xl font-bold text-red-600">
-                    ₦{reportData.outstandingDebts.toLocaleString()}
+                    ₦{reportData.total_expenses?.toLocaleString()}
                   </p>
-                  <p className="text-sm text-slate-500">Outstanding Debts</p>
+                  <p className="text-sm text-slate-500">Total Expenses</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className={`w-12 h-12 ${reportData.profit >= 0 ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                    <BarChart3 className={`w-6 h-6 ${reportData.profit >= 0 ? 'text-green-600' : 'text-orange-600'}`} />
+                  </div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Net Profit</h3>
+                  <p className={`text-2xl font-bold ${reportData.profit >= 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                    ₦{reportData.profit?.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-slate-500">Profit</p>
+                </CardContent>
+              </Card>
+            </div>
+            <ReportChart sales={reportData.total_sales} expenses={reportData.total_expenses} period={period} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Additional Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">
+                      ₦{reportData.total_sales?.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-500">Total Sales</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-red-600">
+                      ₦{reportData.total_expenses?.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-500">Total Expenses</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-600">
+                      ₦{reportData.profit?.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-500">Profit</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      ₦{reportData.outstanding_debts?.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-slate-500">Outstanding Debts</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            <RecentActivityList activities={activities.slice(0, 4)} />
+          </>
         )}
-
-        {/* Activity Log */}
+        {/* Activity Log only in detailed mode */}
         {reportType === "detailed" && activities.length > 0 && (
           <ActivityLog activities={activities} period={period} />
         )}
-
-        {/* Export Options */}
+        {/* Export Options always shown */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Export & Share</CardTitle>
