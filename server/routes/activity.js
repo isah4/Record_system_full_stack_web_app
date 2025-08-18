@@ -154,7 +154,7 @@ router.get("/summary", auth, async (req, res) => {
       dateFilter = 'WHERE DATE(activity_date) = $1';
       params = [date];
     } else if (start && end) {
-      dateFilter = 'WHERE activity_date >= $1 AND activity_date <= $2';
+      dateFilter = 'WHERE DATE(activity_date) >= $1 AND DATE(activity_date) <= $2';
       params = [start, end];
     }
     // Aggregate totals by activity type

@@ -3,8 +3,12 @@
     "@hookform/resolvers": "^5.2.1",
     "axios": "^1.11.0",
     "lucide-react": "^0.536.0",
+    "pdfmake": "^0.2.20",
     "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.7.1",
     "yup": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/pdfmake": "^0.2.11"
   }
 }

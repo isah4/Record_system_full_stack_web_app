@@ -306,9 +306,17 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
                           >
                             <Minus className="w-5 h-5" />
                           </Button>
-                          <span className="text-2xl font-bold text-slate-800 min-w-[3rem] text-center">
-                            {selectedItem.quantity}
-                          </span>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={item.stock}
+                            value={selectedItem.quantity}
+                            onChange={e => {
+                              const val = Math.max(1, Math.min(item.stock, Number(e.target.value)));
+                              updateQuantity(selectedItem.id, val);
+                            }}
+                            className="w-20 text-2xl font-bold text-slate-800 text-center h-12"
+                          />
                           <Button
                             size="icon"
                             variant="outline"

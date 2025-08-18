@@ -7,38 +7,15 @@ interface ReportChartProps {
   sales: number
   expenses: number
   period: string
+  trendData: Array<{ label: string; sales: number; expenses: number }>
 }
 
-export default function ReportChart({ sales, expenses, period }: ReportChartProps) {
+export default function ReportChart({ sales, expenses, period, trendData }: ReportChartProps) {
   const profit = sales - expenses
   const profitMargin = sales > 0 ? (profit / sales) * 100 : 0
-  
-  // Mock data for trend visualization
-  const trendData = {
-    today: [
-      { label: "Morning", sales: 45000, expenses: 15000 },
-      { label: "Afternoon", sales: 85000, expenses: 35000 },
-      { label: "Evening", sales: 115000, expenses: 35000 }
-    ],
-    week: [
-      { label: "Mon", sales: 180000, expenses: 65000 },
-      { label: "Tue", sales: 220000, expenses: 75000 },
-      { label: "Wed", sales: 195000, expenses: 70000 },
-      { label: "Thu", sales: 245000, expenses: 85000 },
-      { label: "Fri", sales: 210000, expenses: 80000 },
-      { label: "Sat", sales: 120000, expenses: 45000 },
-      { label: "Sun", sales: 78000, expenses: 30000 }
-    ],
-    month: [
-      { label: "Week 1", sales: 1200000, expenses: 420000 },
-      { label: "Week 2", sales: 1350000, expenses: 465000 },
-      { label: "Week 3", sales: 1250000, expenses: 450000 },
-      { label: "Week 4", sales: 1400000, expenses: 465000 }
-    ]
-  }
 
-  const data = trendData[period as keyof typeof trendData] || trendData.today
-  const maxValue = Math.max(...data.map(d => Math.max(d.sales, d.expenses)))
+  const data = trendData || []
+  const maxValue = data.length > 0 ? Math.max(...data.map(d => Math.max(d.sales, d.expenses))) : 1
 
   return (
     <Card>

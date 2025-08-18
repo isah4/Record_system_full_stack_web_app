@@ -57,6 +57,7 @@ export default function Dashboard() {
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null);
   const router = useRouter();
   const { handleError } = useErrorHandler();
 
@@ -94,8 +95,11 @@ export default function Dashboard() {
       setLoadingActivities(true);
       setActivityError(null);
       try {
+        // Use the same endpoint and logic as the report page
         const res = await api.get("/activity?limit=4");
-        setRecentActivities(res.data);
+        // Sort by activity_date DESC as a safeguard
+        const sorted = [...res.data].sort((a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime());
+        setRecentActivities(sorted);
       } catch (err: any) {
         setActivityError("Could not load recent activity");
       } finally {
@@ -185,6 +189,19 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+        {quickActionLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+            <div className="flex flex-col items-center gap-4">
+              <svg className="animate-spin h-10 w-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <span className="text-emerald-700 font-semibold text-lg">
+                Loading...
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-24 xs-reduce-padding">
@@ -219,8 +236,11 @@ export default function Dashboard() {
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 gap-3 xs-single-col">
-              <div onClick={() => router.push("/sales")}>
-                {" "}
+              <div onClick={async () => {
+                setQuickActionLoading("sales");
+                await new Promise(res => setTimeout(res, 400));
+                router.push("/sales");
+              }}>
                 {/* Sales */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
                   <CardContent className="p-6 text-center xs-reduce-card-padding">
@@ -234,8 +254,11 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
-              <div onClick={() => router.push("/expenses")}>
-                {" "}
+              <div onClick={async () => {
+                setQuickActionLoading("expenses");
+                await new Promise(res => setTimeout(res, 400));
+                router.push("/expenses");
+              }}>
                 {/* Expenses */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
                   <CardContent className="p-6 text-center xs-reduce-card-padding">
@@ -249,8 +272,11 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
-              <div onClick={() => router.push("/debts")}>
-                {" "}
+              <div onClick={async () => {
+                setQuickActionLoading("debts");
+                await new Promise(res => setTimeout(res, 400));
+                router.push("/debts");
+              }}>
                 {/* Debts */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
                   <CardContent className="p-6 text-center xs-reduce-card-padding">
@@ -262,8 +288,11 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
-              <div onClick={() => router.push("/inventory")}>
-                {" "}
+              <div onClick={async () => {
+                setQuickActionLoading("inventory");
+                await new Promise(res => setTimeout(res, 400));
+                router.push("/inventory");
+              }}>
                 {/* Inventory */}
                 <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
                   <CardContent className="p-6 text-center xs-reduce-card-padding">
@@ -318,7 +347,14 @@ export default function Dashboard() {
                         Only {item.stock} left
                       </p>
                     </div>
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge
+                      variant="destructive"
+                      className="text-xs cursor-pointer"
+                      onClick={() => {
+                        const message = encodeURIComponent(`URGENT: The item '${item.name}' is low in stock (only ${item.stock} left). Please restock soon!`);
+                        window.open(`https://wa.me/2349031557364?text=${message}`, '_blank');
+                      }}
+                    >
                       URGENT
                     </Badge>
                   </div>

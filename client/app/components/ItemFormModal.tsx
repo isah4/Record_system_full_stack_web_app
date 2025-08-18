@@ -159,7 +159,7 @@ export default function ItemFormModal({ item, onClose, onSuccess }: ItemFormModa
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* General Error */}
             {errors.general && (

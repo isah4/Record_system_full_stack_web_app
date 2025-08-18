@@ -67,9 +67,11 @@ router.get('/dashboard', auth, async (req, res) => {
     // Calculate changes (for now, we'll use simple calculations)
     // In a real app, you'd compare with previous periods
     const totalSales = parseFloat(salesResult.rows[0].total_sales) || 0;
+    const totalSalesCount = parseInt(salesResult.rows[0].total_sales_count) || 0;
     const totalItems = parseInt(itemsResult.rows[0].total_items) || 0;
     const totalExpenses = 0; // Placeholder - you can add expenses table later
     const activeDebts = parseInt(debtsResult.rows[0].active_debts) || 0;
+    const totalDebtAmount = parseFloat(debtsResult.rows[0].total_debt_amount) || 0;
 
     // Calculate percentage changes (simplified - you can enhance this)
     const salesChange = totalSales > 0 ? '+12%' : '0%';
@@ -79,9 +81,11 @@ router.get('/dashboard', auth, async (req, res) => {
 
     const analytics = {
       totalSales,
+      totalSalesCount,
       totalItems,
       totalExpenses,
       activeDebts,
+      totalDebtAmount,
       salesChange,
       itemsChange,
       expensesChange,
