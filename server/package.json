@@ -9,6 +9,7 @@
     "init-db": "node db/init-db.js",
     "init-db-psql": "psql -U postgres -d record_sys -f db/schema.sql",
     "check-db": "node db/check-db.js",
+    "test-connection": "node test-connection.js",
     "clear-port": "node -e \"require('./utils/port-manager').checkAndFreePort(5000, true)\"",
     "safe-start": "npm run clear-port && npm start"
   },

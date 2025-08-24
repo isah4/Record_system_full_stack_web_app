@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { env } from './env';
 
 // Create axios instance with default config
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: env.API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,7 +15,7 @@ api.interceptors.response.use(
   (error) => {
     // Log network errors for debugging
     if (error.message.includes('Network Error')) {
-      console.error('Network Error: Unable to connect to the server. Please ensure the server is running on port 5000.');
+      console.error('Network Error: Unable to connect to the server. Please ensure the server is running.');
     }
     
     return Promise.reject(error);
@@ -49,8 +50,8 @@ api.interceptors.response.use(
 
 // API Configuration
 export const API_CONFIG = {
-  // Development server URL
-  BASE_URL: 'http://localhost:5000',
+  // Base URL from environment variables
+  BASE_URL: env.BASE_URL,
   
   // API endpoints
   ENDPOINTS: {
