@@ -458,10 +458,10 @@ export default function ReportsPage() {
                 { text: "Outstanding Debts", style: "tableHeader" },
               ],
               [
-                `₦${reportData.total_sales?.toLocaleString()}`,
-                `₦${reportData.total_expenses?.toLocaleString()}`,
-                `₦${reportData.profit?.toLocaleString()}`,
-                `₦${reportData.outstanding_debts?.toLocaleString()}`,
+                               `₦${(Number(reportData.total_sales) || 0).toFixed(2)}`,
+               `₦${(Number(reportData.total_expenses) || 0).toFixed(2)}`,
+               `₦${(Number(reportData.profit) || 0).toFixed(2)}`,
+               `₦${(Number(reportData.outstanding_debts) || 0).toFixed(2)}`,
               ],
             ],
             layout: {
@@ -485,7 +485,7 @@ export default function ReportsPage() {
               ...reportData.summary.map((s: { activity_type: string; count: number; total_amount: number }) => [
                 s.activity_type,
                 s.count,
-                `₦${s.total_amount?.toLocaleString()}`,
+                                 `₦${(Number(s.total_amount) || 0).toFixed(2)}`,
               ]),
             ],
             layout: {
@@ -563,11 +563,11 @@ export default function ReportsPage() {
       const summary =
         `Business Report for ${businessName}\n` +
         `Period: ${dateRange}\n` +
-        `Total Sales: ₦${reportData.total_sales?.toLocaleString()}\n` +
-        `Gross Profit: ₦${profitAnalysis?.total_profit?.toLocaleString() ?? 0}\n` +
-        `Net Profit: ₦${(profitAnalysis?.total_profit - (reportData?.total_expenses ?? 0)).toLocaleString()}\n` +
-        `Total Expenses: ₦${reportData.total_expenses?.toLocaleString()}\n` +
-        `Outstanding Debts: ₦${reportData.outstanding_debts?.toLocaleString()}`;
+                 `Total Sales: ₦${(Number(reportData.total_sales) || 0).toFixed(2)}\n` +
+                 `Gross Profit: ₦${(Number(profitAnalysis?.total_profit) || 0).toFixed(2)}\n` +
+         `Net Profit: ₦${((Number(profitAnalysis?.total_profit) || 0) - (Number(reportData?.total_expenses) || 0)).toFixed(2)}\n` +
+         `Total Expenses: ₦${(Number(reportData.total_expenses) || 0).toFixed(2)}\n` +
+         `Outstanding Debts: ₦${(Number(reportData.outstanding_debts) || 0).toFixed(2)}`;
       await navigator.clipboard.writeText(summary);
       toast({ title: "Copied!", description: "Report summary copied to clipboard." });
     }
@@ -750,7 +750,7 @@ export default function ReportsPage() {
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">Gross Profit</h3>
                 <p className="text-2xl font-bold text-blue-600">
-                    ₦{profitAnalysis?.total_profit?.toLocaleString() ?? 0}
+                    ₦{(Number(profitAnalysis?.total_profit) || 0).toFixed(2)}
                 </p>
                   <p className="text-sm text-slate-500">Gross Profit: Sales - Wholesale Cost</p>
               </CardContent>
@@ -762,20 +762,20 @@ export default function ReportsPage() {
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">Expenses</h3>
                 <p className="text-2xl font-bold text-red-600">
-                    ₦{reportData.total_expenses?.toLocaleString()}
+                    ₦{(Number(reportData.total_expenses) || 0).toFixed(2)}
                 </p>
                   <p className="text-sm text-slate-500">Total Expenses</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4 text-center">
-                  <div className={`w-12 h-12 ${profitAnalysis?.total_profit - (reportData?.total_expenses ?? 0) >= 0 ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-3`}>
-                    <BarChart3 className={`w-6 h-6 ${profitAnalysis?.total_profit - (reportData?.total_expenses ?? 0) >= 0 ? 'text-green-600' : 'text-orange-600'}`} />
+                  <div className={`w-12 h-12 ${(Number(profitAnalysis?.total_profit) || 0) - (Number(reportData?.total_expenses) || 0) >= 0 ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-3`}>
+                    <BarChart3 className={`w-6 h-6 ${(Number(profitAnalysis?.total_profit) || 0) - (Number(reportData?.total_expenses) || 0) >= 0 ? 'text-green-600' : 'text-orange-600'}`} />
                 </div>
                 <h3 className="font-semibold text-slate-800 mb-1">Net Profit</h3>
-                  <p className={`text-2xl font-bold ${profitAnalysis?.total_profit - (reportData?.total_expenses ?? 0) >= 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                    ₦{(profitAnalysis?.total_profit - (reportData?.total_expenses ?? 0)).toLocaleString()}
-                  </p>
+                                  <p className={`text-2xl font-bold ${(Number(profitAnalysis?.total_profit) || 0) - (Number(reportData?.total_expenses) || 0) >= 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                    ₦{((Number(profitAnalysis?.total_profit) || 0) - (Number(reportData?.total_expenses) || 0)).toFixed(2)}
+                </p>
                   <p className="text-sm text-slate-500">Net Profit: Gross Profit - Expenses</p>
               </CardContent>
             </Card>
@@ -789,26 +789,26 @@ export default function ReportsPage() {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-blue-600">
-                      ₦{reportData.total_sales?.toLocaleString()}
+                      ₦{(Number(reportData.total_sales) || 0).toFixed(2)}
                   </p>
                     <p className="text-sm text-slate-500">Total Sales</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-red-600">
-                      ₦{reportData.total_expenses?.toLocaleString()}
-                    </p>
+                                                                             <p className="text-2xl font-bold text-red-600">
+                       ₦{(Number(reportData.total_expenses) || 0).toFixed(2)}
+                     </p>
                     <p className="text-sm text-slate-500">Total Expenses</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-green-600">
-                      ₦{profitAnalysis?.total_profit?.toLocaleString() ?? 0}
-                    </p>
+                                                                             <p className="text-2xl font-bold text-green-600">
+                       ₦{(Number(profitAnalysis?.total_profit) || 0).toFixed(2)}
+                   </p>
                     <p className="text-sm text-slate-500">Profit</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-orange-600">
-                      ₦{reportData.outstanding_debts?.toLocaleString()}
-                  </p>
+                                         <p className="text-2xl font-bold text-orange-600">
+                       ₦{(Number(reportData.outstanding_debts) || 0).toFixed(2)}
+                   </p>
                   <p className="text-sm text-slate-500">Outstanding Debts</p>
                 </div>
               </div>

@@ -6,6 +6,9 @@
     "start": "node index.js",
     "test": "echo 'No tests configured yet'",
     "migrate": "node db/run-migration.js",
+    "init-db": "node db/init-db.js",
+    "init-db-psql": "psql -U postgres -d record_sys -f db/schema.sql",
+    "check-db": "node db/check-db.js",
     "clear-port": "node -e \"require('./utils/port-manager').checkAndFreePort(5000, true)\"",
     "safe-start": "npm run clear-port && npm start"
   },

@@ -34,10 +34,13 @@ router.post('/register', async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Generate username from email (remove @gmail.com part)
+    const username = email.split('@')[0];
+    
     // Create user
     const newUser = await pool.query(
-      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email, created_at',
-      [email, hashedPassword]
+      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
+      [username, email, hashedPassword]
     );
 
     // Generate JWT token
@@ -51,6 +54,7 @@ router.post('/register', async (req, res) => {
       message: 'User registered successfully',
       user: {
         id: newUser.rows[0].id,
+        username: newUser.rows[0].username,
         email: newUser.rows[0].email,
         created_at: newUser.rows[0].created_at
       },
@@ -75,7 +79,7 @@ router.post('/login', async (req, res) => {
 
     // Find user
     const user = await pool.query(
-      'SELECT id, email, password, created_at FROM users WHERE email = $1',
+      'SELECT id, username, email, password, created_at FROM users WHERE email = $1',
       [email]
     );
 
@@ -101,6 +105,7 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       user: {
         id: user.rows[0].id,
+        username: user.rows[0].username,
         email: user.rows[0].email,
         created_at: user.rows[0].created_at
       },
@@ -117,7 +122,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await pool.query(
-      'SELECT id, email, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, created_at FROM users WHERE id = $1',
       [req.user.userId]
     );
 
