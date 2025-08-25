@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { api } from '@/config/api';
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from './auth-context';
 
 // Log API service initialization
 console.log('🔧 API Service Initialized');
@@ -42,6 +43,55 @@ class ApiService {
     }
 
     return headers;
+  }
+
+  // Authentication methods
+  async login(credentials: LoginRequest): Promise<AuthResponse> {
+    console.log('🔐 Attempting login with:', credentials.email);
+    try {
+      const response = await api.post('/auth/login', credentials);
+      console.log('✅ Login successful');
+      
+      // Set token in service for future requests
+      if (response.data.token) {
+        this.setToken(response.data.token);
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Login failed:', error);
+      throw error;
+    }
+  }
+
+  async register(userData: RegisterRequest): Promise<AuthResponse> {
+    console.log('📝 Attempting registration with:', userData.email);
+    try {
+      const response = await api.post('/auth/register', userData);
+      console.log('✅ Registration successful');
+      
+      // Set token in service for future requests
+      if (response.data.token) {
+        this.setToken(response.data.token);
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Registration failed:', error);
+      throw error;
+    }
+  }
+
+  async getCurrentUser(): Promise<{ user: User }> {
+    console.log('👤 Getting current user');
+    try {
+      const response = await this.authenticatedRequest<{ user: User }>('/auth/me');
+      console.log('✅ Current user retrieved');
+      return response;
+    } catch (error: any) {
+      console.error('❌ Failed to get current user:', error);
+      throw error;
+    }
   }
 
   async authenticatedRequest<T>(endpoint: string, options: any = {}): Promise<T> {

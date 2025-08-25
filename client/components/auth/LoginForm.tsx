@@ -19,12 +19,21 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, error, clearError } = useAuth();
+  
+  // Debug logging
+  console.log('🔧 LoginForm: useAuth hook called');
+  const authContext = useAuth();
+  console.log('🔧 LoginForm: authContext received:', authContext);
+  
+  const { login, error, clearError } = authContext;
   const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔧 LoginForm: Form submitted');
+    console.log('🔧 LoginForm: login function type:', typeof login);
     
     if (!email || !password) {
       handleError("Please fill in all fields", {
@@ -38,10 +47,13 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
     clearError();
 
     try {
+      console.log('🔧 LoginForm: Calling login function');
       await login(email, password);
+      console.log('🔧 LoginForm: Login successful');
       handleSuccess("Login successful! Welcome back.");
       router.push('/');
     } catch (error) {
+      console.error('🔧 LoginForm: Login error:', error);
       // Error is handled by the auth context, but we can also show toast
       handleError(error, {
         title: "Login Failed",
@@ -102,12 +114,11 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
             </div>
           </div>
         </CardContent>
-        
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-2">
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isSubmitting || !email || !password}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
@@ -118,17 +129,14 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
               'Sign In'
             )}
           </Button>
-          
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <button
-              type="button"
-              onClick={onToggleMode}
-              className="text-primary hover:underline font-medium"
-            >
-              Sign up
-            </button>
-          </div>
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onToggleMode}
+            className="w-full"
+          >
+            Don't have an account? Sign up
+          </Button>
         </CardFooter>
       </form>
     </Card>

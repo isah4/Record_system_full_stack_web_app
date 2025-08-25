@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 
@@ -20,35 +20,43 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState('');
-  const { register, error, clearError } = useAuth();
+  
+  // Debug logging
+  console.log('🔧 RegisterForm: useAuth hook called');
+  const authContext = useAuth();
+  console.log('🔧 RegisterForm: authContext received:', authContext);
+  
+  const { register, error, clearError } = authContext;
   const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
-
-  const validateForm = () => {
-    if (!email || !password || !confirmPassword) {
-      setValidationError('All fields are required');
-      return false;
-    }
-
-    if (password.length < 6) {
-      setValidationError('Password must be at least 6 characters');
-      return false;
-    }
-
-    if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
-      return false;
-    }
-
-    setValidationError('');
-    return true;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    console.log('🔧 RegisterForm: Form submitted');
+    console.log('🔧 RegisterForm: register function type:', typeof register);
+    
+    if (!email || !password || !confirmPassword) {
+      handleError("Please fill in all fields", {
+        title: "Validation Error",
+        description: "All fields are required."
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      handleError("Passwords do not match", {
+        title: "Validation Error",
+        description: "Please ensure both passwords are identical."
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      handleError("Password too short", {
+        title: "Validation Error",
+        description: "Password must be at least 6 characters long."
+      });
       return;
     }
 
@@ -56,14 +64,16 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
     clearError();
 
     try {
+      console.log('🔧 RegisterForm: Calling register function');
       await register(email, password);
+      console.log('🔧 RegisterForm: Registration successful');
       handleSuccess("Registration successful! Welcome to BizTracker.");
       router.push('/');
     } catch (error) {
-      // Error is handled by the auth context, but also show toast
+      console.error('🔧 RegisterForm: Registration error:', error);
       handleError(error, {
         title: "Registration Failed",
-        description: "Could not create your account. Please try again."
+        description: "Please try again with different credentials."
       });
     } finally {
       setIsSubmitting(false);
@@ -75,14 +85,14 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
         <CardDescription className="text-center">
-          Join BizTracker to manage your business
+          Sign up for your BizTracker account
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {(error || validationError) && (
+          {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error || validationError}</AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           
@@ -110,7 +120,7 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10"
@@ -137,8 +147,7 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
             </div>
           </div>
         </CardContent>
-        
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-2">
           <Button 
             type="submit" 
             className="w-full" 
@@ -153,17 +162,14 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
               'Create Account'
             )}
           </Button>
-          
-          <div className="text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <button
-              type="button"
-              onClick={onToggleMode}
-              className="text-primary hover:underline font-medium"
-            >
-              Sign in
-            </button>
-          </div>
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onToggleMode}
+            className="w-full"
+          >
+            Already have an account? Sign in
+          </Button>
         </CardFooter>
       </form>
     </Card>

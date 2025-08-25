@@ -1,7 +1,29 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, apiService } from './api';
+
+// Define interfaces locally to avoid circular imports
+interface User {
+  id: number;
+  email: string;
+  created_at: string;
+}
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface RegisterRequest {
+  email: string;
+  password: string;
+}
+
+interface AuthResponse {
+  message: string;
+  user: User;
+  token: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('token');
       if (token) {
         try {
+          // Import apiService dynamically to avoid circular imports
+          const { apiService } = await import('./api');
           const { user } = await apiService.getCurrentUser();
           setUser(user);
         } catch (error) {
@@ -55,7 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       setError(null);
       console.log('Attempting login with:', { email });
+      
+      // Import apiService dynamically to avoid circular imports
+      const { apiService } = await import('./api');
       const response = await apiService.login({ email, password });
+      
       console.log('Login response received:', { success: !!response.token });
       localStorage.setItem('token', response.token);
       setUser(response.user);
@@ -72,7 +100,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Import apiService dynamically to avoid circular imports
+      const { apiService } = await import('./api');
       const response = await apiService.register({ email, password });
+      
       localStorage.setItem('token', response.token);
       setUser(response.user);
     } catch (error) {
@@ -108,3 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
+
+// Export types for use in other files
+export type { User, LoginRequest, RegisterRequest, AuthResponse };
