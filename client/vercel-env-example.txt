@@ -1,0 +1,17 @@
+# Production Environment Variables for Vercel
+# Copy these to your Vercel dashboard environment variables
+
+# API Configuration - Replace with your actual server URL
+NEXT_PUBLIC_API_URL=https://your-server-domain.com/api
+NEXT_PUBLIC_BASE_URL=https://your-server-domain.com
+
+# Client Configuration - Replace with your Vercel app URL
+NEXT_PUBLIC_CLIENT_URL=https://your-app-name.vercel.app
+
+# Environment
+NODE_ENV=production
+
+# Example for a typical deployment:
+# NEXT_PUBLIC_API_URL=https://your-backend.herokuapp.com/api
+# NEXT_PUBLIC_BASE_URL=https://your-backend.herokuapp.com
+# NEXT_PUBLIC_CLIENT_URL=https://your-app.vercel.app
