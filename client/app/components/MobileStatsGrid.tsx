@@ -15,7 +15,7 @@ export default function MobileStatsGrid() {
     async function fetchStats() {
       setLoading(true)
       try {
-        const data = await apiService.authenticatedRequest("/api/analytics/dashboard")
+        const data = await apiService.authenticatedRequest("/analytics/dashboard")
         setStats(data)
       } catch (err: any) {
         // Only show error if it's not an authentication error

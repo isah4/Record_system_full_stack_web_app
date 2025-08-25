@@ -73,7 +73,7 @@ export default function Dashboard() {
       setLoadingLowStock(true);
       try {
         const data = await apiService.authenticatedRequest<LowStockItem[]>(
-          "/api/items/low-stock"
+          "/items/low-stock"
         );
         setLowStock(data);
       } catch (err: any) {

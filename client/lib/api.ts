@@ -11,7 +11,14 @@ class ApiService {
   private token: string | null = null;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || '';
+    // Remove trailing /api if it exists to avoid double /api
+    let baseURL = process.env.NEXT_PUBLIC_API_URL || '';
+    if (baseURL.endsWith('/api')) {
+      baseURL = baseURL.slice(0, -4); // Remove /api from end
+      console.log('🔧 Removed trailing /api from baseURL');
+    }
+    
+    this.baseURL = baseURL;
     console.log('🚀 ApiService created with baseURL:', this.baseURL);
     
     // Validate baseURL
@@ -49,7 +56,7 @@ class ApiService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     console.log('🔐 Attempting login with:', credentials.email);
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/api/auth/login', credentials);
       console.log('✅ Login successful');
       
       // Set token in service for future requests
@@ -67,7 +74,7 @@ class ApiService {
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     console.log('📝 Attempting registration with:', userData.email);
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post('/api/auth/register', userData);
       console.log('✅ Registration successful');
       
       // Set token in service for future requests
@@ -85,7 +92,7 @@ class ApiService {
   async getCurrentUser(): Promise<{ user: User }> {
     console.log('👤 Getting current user');
     try {
-      const response = await this.authenticatedRequest<{ user: User }>('/auth/me');
+      const response = await this.authenticatedRequest<{ user: User }>('/api/auth/me');
       console.log('✅ Current user retrieved');
       return response;
     } catch (error: any) {
@@ -95,7 +102,10 @@ class ApiService {
   }
 
   async authenticatedRequest<T>(endpoint: string, options: any = {}): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    // Ensure endpoint starts with /api
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    const url = `${this.baseURL}${apiEndpoint}`;
+    
     const config = {
       ...options,
       headers: {
@@ -106,7 +116,8 @@ class ApiService {
 
     console.log(`\n🔐 [${new Date().toISOString()}] Authenticated Request:`, {
       method: options.method || 'GET',
-      endpoint,
+      originalEndpoint: endpoint,
+      apiEndpoint,
       fullURL: url,
       hasToken: !!this.token,
       headers: config.headers,
@@ -115,7 +126,7 @@ class ApiService {
 
     try {
       const response = await api.request({
-        url: endpoint,
+        url: apiEndpoint,
         ...config,
       });
 
@@ -127,7 +138,8 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error(`❌ [${new Date().toISOString()}] Authenticated request failed:`, {
-        endpoint,
+        originalEndpoint: endpoint,
+        apiEndpoint,
         fullURL: url,
         error: error.message,
         status: error.response?.status,
@@ -146,11 +158,14 @@ class ApiService {
   }
 
   async publicRequest<T>(endpoint: string, options: any = {}): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    // Ensure endpoint starts with /api
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    const url = `${this.baseURL}${apiEndpoint}`;
     
     console.log(`\n🌐 [${new Date().toISOString()}] Public Request:`, {
       method: options.method || 'GET',
-      endpoint,
+      originalEndpoint: endpoint,
+      apiEndpoint,
       fullURL: url,
       headers: options.headers,
       data: options.data,
@@ -158,7 +173,7 @@ class ApiService {
 
     try {
       const response = await api.request({
-        url: endpoint,
+        url: apiEndpoint,
         ...options,
       });
 
@@ -170,7 +185,8 @@ class ApiService {
       return response.data;
     } catch (error: any) {
       console.error(`❌ [${new Date().toISOString()}] Public request failed:`, {
-        endpoint,
+        originalEndpoint: endpoint,
+        apiEndpoint,
         fullURL: url,
         error: error.message,
         status: error.response?.status,
