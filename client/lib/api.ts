@@ -102,9 +102,9 @@ class ApiService {
   }
 
   async authenticatedRequest<T>(endpoint: string, options: any = {}): Promise<T> {
-    // Ensure endpoint starts with /api
-    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    const url = `${this.baseURL}${apiEndpoint}`;
+    // Remove /api prefix if present since the main API config will add it automatically
+    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.slice(4) : endpoint;
+    const url = `${this.baseURL}/api${cleanEndpoint}`;
     
     const config = {
       ...options,
@@ -117,7 +117,7 @@ class ApiService {
     console.log(`\n🔐 [${new Date().toISOString()}] Authenticated Request:`, {
       method: options.method || 'GET',
       originalEndpoint: endpoint,
-      apiEndpoint,
+      cleanEndpoint,
       fullURL: url,
       hasToken: !!this.token,
       headers: config.headers,
@@ -126,7 +126,7 @@ class ApiService {
 
     try {
       const response = await api.request({
-        url: apiEndpoint,
+        url: cleanEndpoint,
         ...config,
       });
 
@@ -139,7 +139,7 @@ class ApiService {
     } catch (error: any) {
       console.error(`❌ [${new Date().toISOString()}] Authenticated request failed:`, {
         originalEndpoint: endpoint,
-        apiEndpoint,
+        cleanEndpoint,
         fullURL: url,
         error: error.message,
         status: error.response?.status,
@@ -158,14 +158,14 @@ class ApiService {
   }
 
   async publicRequest<T>(endpoint: string, options: any = {}): Promise<T> {
-    // Ensure endpoint starts with /api
-    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    const url = `${this.baseURL}${apiEndpoint}`;
+    // Remove /api prefix if present since the main API config will add it automatically
+    const cleanEndpoint = endpoint.startsWith('/api') ? endpoint.slice(4) : endpoint;
+    const url = `${this.baseURL}/api${cleanEndpoint}`;
     
     console.log(`\n🌐 [${new Date().toISOString()}] Public Request:`, {
       method: options.method || 'GET',
       originalEndpoint: endpoint,
-      apiEndpoint,
+      cleanEndpoint,
       fullURL: url,
       headers: options.headers,
       data: options.data,
@@ -173,7 +173,7 @@ class ApiService {
 
     try {
       const response = await api.request({
-        url: apiEndpoint,
+        url: cleanEndpoint,
         ...options,
       });
 
@@ -186,7 +186,7 @@ class ApiService {
     } catch (error: any) {
       console.error(`❌ [${new Date().toISOString()}] Public request failed:`, {
         originalEndpoint: endpoint,
-        apiEndpoint,
+        cleanEndpoint,
         fullURL: url,
         error: error.message,
         status: error.response?.status,

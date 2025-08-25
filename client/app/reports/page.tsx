@@ -259,9 +259,9 @@ export default function ReportsPage() {
       }
       // Fetch summary and activities
       const [summaryResponse, activitiesResponse, profitResponse] = await Promise.all([
-        api.get(`/activity/summary?${selectedPeriod === "today" ? `date=${endDate}` : `start=${startDate}&end=${endDate}`}`),
-        api.get(`/activity?${selectedPeriod === "today" ? `date=${endDate}` : ""}&limit=500`),
-        api.get(`/activity/profit-analysis?startDate=${startDate}&endDate=${endDate}`)
+        api.get(`/api/activity/summary?${selectedPeriod === "today" ? `date=${endDate}` : `start=${startDate}&end=${endDate}`}`),
+        api.get(`/api/activity?${selectedPeriod === "today" ? `date=${endDate}` : ""}&limit=500`),
+        api.get(`/api/activity/profit-analysis?startDate=${startDate}&endDate=${endDate}`)
       ]);
       setReportData(summaryResponse.data);
       setActivities(activitiesResponse.data);

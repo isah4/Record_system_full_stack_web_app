@@ -58,7 +58,7 @@ export default function SalesPage() {
     setError(null);
     try {
       // Assume backend supports ?page= and ?limit= (default 10 per page)
-      const response = await api.get(`/sales?page=${reset ? 1 : page}&limit=10`);
+      const response = await api.get(`/api/sales?page=${reset ? 1 : page}&limit=10`);
       const data = response.data;
       if (reset) {
         setSales(data);

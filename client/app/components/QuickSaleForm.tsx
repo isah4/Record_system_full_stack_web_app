@@ -80,7 +80,7 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
     async function fetchItems() {
       setLoading(true);
       try {
-        const response = await api.get("/items");
+        const response = await api.get("/api/items");
         setItems(response.data);
       } catch (err: any) {
         handleError(err, {
@@ -139,7 +139,7 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
       
       console.log('Sending sale data:', saleData);
       
-      await api.post("/sales", saleData);
+      await api.post("/api/sales", saleData);
       
       handleSuccess("Sale recorded successfully!");
       onClose();

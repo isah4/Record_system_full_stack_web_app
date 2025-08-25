@@ -51,7 +51,7 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
   const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/sales/${sale.id}/payment-history`);
+      const response = await api.get(`/api/sales/${sale.id}/payment-history`);
       console.log('Payment history response:', response.data);
       setPaymentHistory(response.data);
     } catch (error) {

@@ -94,11 +94,11 @@ export default function ItemFormModal({ item, onClose, onSuccess }: ItemFormModa
 
       if (item) {
         // Update existing item
-        await api.put(`/items/${item.id}`, payload);
+        await api.put(`/api/items/${item.id}`, payload);
         handleSuccess("Item updated successfully!");
       } else {
         // Create new item
-        await api.post("/items", payload);
+        await api.post("/api/items", payload);
         handleSuccess("Item created successfully!");
       }
 

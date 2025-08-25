@@ -64,7 +64,7 @@ export default function InventoryPage() {
   const fetchItems = async () => {
     try {
       setLoadingItems(true);
-      const response = await api.get("/items");
+      const response = await api.get("/api/items");
       setItems(response.data);
     } catch (error) {
       console.error("Error fetching items:", error);
@@ -96,7 +96,7 @@ export default function InventoryPage() {
     if (!deleteItemId) return;
 
     try {
-      await api.delete(`/items/${deleteItemId}`);
+      await api.delete(`/api/items/${deleteItemId}`);
       await fetchItems();
       toast({
         title: "Success",

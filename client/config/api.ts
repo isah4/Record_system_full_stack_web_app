@@ -30,13 +30,19 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for logging
+// Request interceptor for logging and automatic /api prefix
 api.interceptors.request.use(
   (config) => {
+    // Automatically add /api prefix if not present
+    if (config.url && !config.url.startsWith('/api')) {
+      config.url = `/api${config.url}`;
+      console.log('🔧 Auto-added /api prefix to:', config.url);
+    }
+    
     const timestamp = new Date().toISOString();
     console.log(`\n📤 [${timestamp}] API Request:`, {
       method: config.method?.toUpperCase(),
-      url: config.url,
+      originalUrl: config.url,
       baseURL: config.baseURL,
       fullURL: `${config.baseURL}${config.url}`,
       headers: config.headers,
@@ -82,7 +88,7 @@ api.interceptors.response.use(
       url: error.config?.url,
       method: error.config?.method?.toUpperCase(),
       baseURL: error.config?.baseURL,
-      fullURL: error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : 'N/A',
+      fullURL: error.config?.baseURL ? `${error.config?.baseURL}${error.config?.url}` : 'N/A',
       responseData: error.response?.data,
       requestData: error.config?.data,
     });
