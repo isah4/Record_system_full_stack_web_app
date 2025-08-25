@@ -9,6 +9,11 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "categories": ["business", "productivity", "finance"],
   "icons": [
     {

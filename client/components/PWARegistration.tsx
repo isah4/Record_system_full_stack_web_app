@@ -21,17 +21,28 @@ export default function PWARegistration() {
 
   useEffect(() => {
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || 
-        (window.navigator as any).standalone === true) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone === true ||
+                        window.location.search.includes('standalone=true');
+    
+    if (isStandalone) {
       setIsInstalled(true);
     }
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      console.log('Install prompt triggered');
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
+
+    // Debug logging
+    console.log('PWA Registration: Checking browser capabilities...');
+    console.log('Service Worker support:', 'serviceWorker' in navigator);
+    console.log('BeforeInstallPrompt support:', 'BeforeInstallPromptEvent' in window);
+    console.log('Display mode:', window.matchMedia('(display-mode: standalone)').matches);
+    console.log('User agent:', navigator.userAgent);
 
     // Listen for appinstalled event
     const handleAppInstalled = () => {
@@ -52,7 +63,7 @@ export default function PWARegistration() {
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register('/sw.js', { scope: '/' })
         .then((registration) => {
           console.log('Service Worker registered successfully:', registration);
           
@@ -87,6 +98,22 @@ export default function PWARegistration() {
       setShowNotificationPrompt(true);
     }
 
+    // Fallback: Show install prompt after a delay if no beforeinstallprompt event
+    const fallbackTimer = setTimeout(() => {
+      if (!deferredPrompt && !isInstalled && 'serviceWorker' in navigator) {
+        console.log('Showing fallback install prompt');
+        setShowInstallPrompt(true);
+      }
+    }, 3000);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearTimeout(fallbackTimer);
+    };
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -96,18 +123,39 @@ export default function PWARegistration() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+    if (deferredPrompt) {
+      // Native install prompt
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      
+      setDeferredPrompt(null);
+      setShowInstallPrompt(false);
     } else {
-      console.log('User dismissed the install prompt');
+      // Fallback: Show manual installation instructions
+      showManualInstallInstructions();
+    }
+  };
+
+  const showManualInstallInstructions = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let message = '';
+    if (isIOS) {
+      message = 'To install: Tap the share button (📤) and select "Add to Home Screen"';
+    } else if (isAndroid) {
+      message = 'To install: Tap the menu (⋮) and select "Add to Home Screen" or "Install app"';
+    } else {
+      message = 'To install: Look for the install button in your browser\'s address bar or menu';
     }
     
-    setDeferredPrompt(null);
+    alert(message);
     setShowInstallPrompt(false);
   };
 
@@ -126,6 +174,9 @@ export default function PWARegistration() {
 
   // Don't show anything if app is already installed
   if (isInstalled) return null;
+
+  // Show manual install button if no automatic prompt
+  const showManualInstall = !deferredPrompt && !showInstallPrompt;
 
   return (
     <>
@@ -186,6 +237,20 @@ export default function PWARegistration() {
               <X className="w-4 h-4" />
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Manual Install Button - Always visible for better UX */}
+      {showManualInstall && (
+        <div className="fixed bottom-20 left-4 right-4 z-[9999]">
+          <Button
+            onClick={showManualInstallInstructions}
+            size="sm"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Install BizTracker
+          </Button>
         </div>
       )}
     </>

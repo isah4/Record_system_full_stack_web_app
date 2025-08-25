@@ -24,6 +24,20 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "BizTracker",
+    startupImage: [
+      {
+        url: "/icons/icon-512x512.png",
+        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/icon-512x512.png",
+        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      {
+        url: "/icons/icon-512x512.png",
+        media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
   },
   formatDetection: {
     telephone: false,
@@ -40,6 +54,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "BizTracker - Business Management",
     description: "Mobile-first business management system",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "BizTracker",
+    "msapplication-TileColor": "#10b981",
+    "msapplication-config": "/browserconfig.xml",
   },
 };
 
