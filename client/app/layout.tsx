@@ -18,6 +18,27 @@ export const metadata: Metadata = {
   generator: "v0.dev",
 };
 
+// Environment variable logging for debugging
+if (typeof window !== 'undefined') {
+  console.log('🔧 Frontend Environment Variables:');
+  console.log('📍 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+  console.log('🌐 NEXT_PUBLIC_BASE_URL:', process.env.NEXT_PUBLIC_BASE_URL);
+  console.log('🔗 NEXT_PUBLIC_CLIENT_URL:', process.env.NEXT_PUBLIC_CLIENT_URL);
+  console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+  console.log('⏰ App loaded at:', new Date().toISOString());
+  
+  // Validate critical environment variables
+  if (!process.env.NEXT_PUBLIC_API_URL) {
+    console.error('❌ CRITICAL: NEXT_PUBLIC_API_URL is not defined!');
+    console.error('🔧 This will cause API calls to fail');
+  }
+  
+  if (!process.env.NEXT_PUBLIC_CLIENT_URL) {
+    console.error('❌ CRITICAL: NEXT_PUBLIC_CLIENT_URL is not defined!');
+    console.error('🔧 This may cause CORS issues');
+  }
+}
+
 export default function RootLayout({
   children,
 }: {

@@ -1,26 +1,104 @@
 import axios from 'axios';
-import { env } from './env';
 
-// Create axios instance with default config
-export const api = axios.create({
-  baseURL: env.API_URL,
+// Environment configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL;
+
+// Log configuration on load
+console.log('🔧 API Configuration Loaded:');
+console.log('📍 API_BASE_URL:', API_BASE_URL);
+console.log('🌐 CLIENT_URL:', CLIENT_URL);
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+
+// Validate environment variables
+if (!API_BASE_URL) {
+  console.error('❌ NEXT_PUBLIC_API_URL is not defined!');
+  console.error('🔧 Please check your environment variables');
+}
+
+if (!CLIENT_URL) {
+  console.error('❌ NEXT_PUBLIC_CLIENT_URL is not defined!');
+  console.error('🔧 Please check your environment variables');
+}
+
+// Create axios instance with logging
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Standard error handling without port fallback
-api.interceptors.response.use(
-  (response) => response,
+// Request interceptor for logging
+api.interceptors.request.use(
+  (config) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n📤 [${timestamp}] API Request:`, {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      headers: config.headers,
+      data: config.data,
+    });
+    
+    // Log environment info
+    console.log('🌍 Environment Check:', {
+      API_BASE_URL,
+      CLIENT_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      isProduction: process.env.NODE_ENV === 'production',
+    });
+    
+    return config;
+  },
   (error) => {
-    // Log network errors for debugging
-    if (error.message.includes('Network Error')) {
-      console.error('Network Error: Unable to connect to the server. Please ensure the server is running.');
-    }
+    console.error('❌ Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for logging
+api.interceptors.response.use(
+  (response) => {
+    const timestamp = new Date().toISOString();
+    console.log(`\n📥 [${timestamp}] API Response:`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase(),
+      data: response.data,
+      headers: response.headers,
+    });
+    return response;
+  },
+  (error) => {
+    const timestamp = new Date().toISOString();
+    console.error(`\n❌ [${timestamp}] API Error:`, {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method?.toUpperCase(),
+      baseURL: error.config?.baseURL,
+      fullURL: error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : 'N/A',
+      responseData: error.response?.data,
+      requestData: error.config?.data,
+    });
+    
+    // Log environment variables in error
+    console.error('🔧 Environment Variables in Error:', {
+      API_BASE_URL,
+      CLIENT_URL,
+      NODE_ENV: process.env.NODE_ENV,
+    });
     
     return Promise.reject(error);
   }
 );
+
+export { api };
 
 // Add auth token to requests
 api.interceptors.request.use(
@@ -51,7 +129,7 @@ api.interceptors.response.use(
 // API Configuration
 export const API_CONFIG = {
   // Base URL from environment variables
-  BASE_URL: env.BASE_URL,
+  BASE_URL: API_BASE_URL,
   
   // API endpoints
   ENDPOINTS: {

@@ -1,117 +1,141 @@
-import { API_CONFIG, getApiUrl, getAuthHeaders } from '../config/api';
+import axios from 'axios';
+import { api } from '@/config/api';
 
-export interface User {
-  id: number;
-  email: string;
-  created_at: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  message: string;
-  user: User;
-  token: string;
-}
-
-export interface ApiError {
-  error: string;
-}
+// Log API service initialization
+console.log('🔧 API Service Initialized');
+console.log('📍 Base API URL:', process.env.NEXT_PUBLIC_API_URL);
 
 class ApiService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = getApiUrl(endpoint);
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
+  private baseURL: string;
+  private token: string | null = null;
 
-    console.log(`Sending request to: ${url}`, { method: options.method || 'GET' });
+  constructor() {
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || '';
+    console.log('🚀 ApiService created with baseURL:', this.baseURL);
     
-    try {
-      const response = await fetch(url, config);
-      console.log(`Response status: ${response.status} ${response.statusText}`);
-      
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      if (!response.ok) {
-        console.error(`Request failed with status ${response.status}:`, data);
-        throw new Error(data.error || 'An error occurred');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Request error:', error);
-      
-      // Enhanced error handling
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error. Please check your internet connection.');
-      }
-      
-      if (error instanceof Error) {
-        throw error;
-      }
-      
-      throw new Error('An unexpected error occurred. Please try again.');
+    // Validate baseURL
+    if (!this.baseURL) {
+      console.error('❌ NEXT_PUBLIC_API_URL is not defined in API Service!');
     }
   }
 
-  async authenticatedRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers = await getAuthHeaders();
-    return this.request<T>(endpoint, {
-      ...options,
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-    });
+  setToken(token: string) {
+    this.token = token;
+    console.log('🔑 Token set in API Service');
   }
 
-  // Authentication methods
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    console.log('Making login request to:', API_CONFIG.ENDPOINTS.AUTH.LOGIN);
+  clearToken() {
+    this.token = null;
+    console.log('🔑 Token cleared from API Service');
+  }
+
+  private getAuthHeaders() {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+      console.log('🔐 Adding Authorization header to request');
+    } else {
+      console.log('⚠️ No token available for request');
+    }
+
+    return headers;
+  }
+
+  async authenticatedRequest<T>(endpoint: string, options: any = {}): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config = {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    };
+
+    console.log(`\n🔐 [${new Date().toISOString()}] Authenticated Request:`, {
+      method: options.method || 'GET',
+      endpoint,
+      fullURL: url,
+      hasToken: !!this.token,
+      headers: config.headers,
+      data: options.data,
+    });
+
     try {
-      const response = await this.request<AuthResponse>(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
-        method: 'POST',
-        body: JSON.stringify(credentials),
+      const response = await api.request({
+        url: endpoint,
+        ...config,
       });
-      console.log('Login request successful');
-      return response;
-    } catch (error) {
-      console.error('Login request failed:', error);
+
+      console.log(`✅ [${new Date().toISOString()}] Request successful:`, {
+        status: response.status,
+        data: response.data,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error(`❌ [${new Date().toISOString()}] Authenticated request failed:`, {
+        endpoint,
+        fullURL: url,
+        error: error.message,
+        status: error.response?.status,
+        responseData: error.response?.data,
+      });
+
+      // Log environment variables in error
+      console.error('🔧 Environment Check in Error:', {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NODE_ENV: process.env.NODE_ENV,
+        baseURL: this.baseURL,
+      });
+
       throw error;
     }
   }
 
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
-    return this.request<AuthResponse>(API_CONFIG.ENDPOINTS.AUTH.REGISTER, {
-      method: 'POST',
-      body: JSON.stringify(userData),
+  async publicRequest<T>(endpoint: string, options: any = {}): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    console.log(`\n🌐 [${new Date().toISOString()}] Public Request:`, {
+      method: options.method || 'GET',
+      endpoint,
+      fullURL: url,
+      headers: options.headers,
+      data: options.data,
     });
-  }
 
-  async getCurrentUser(): Promise<{ user: User }> {
-    return this.authenticatedRequest<{ user: User }>(API_CONFIG.ENDPOINTS.AUTH.ME);
-  }
+    try {
+      const response = await api.request({
+        url: endpoint,
+        ...options,
+      });
 
-  // Health check
-  async healthCheck(): Promise<{ status: string; message: string }> {
-    return this.request<{ status: string; message: string }>('/api/health');
+      console.log(`✅ [${new Date().toISOString()}] Public request successful:`, {
+        status: response.status,
+        data: response.data,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error(`❌ [${new Date().toISOString()}] Public request failed:`, {
+        endpoint,
+        fullURL: url,
+        error: error.message,
+        status: error.response?.status,
+        responseData: error.response?.data,
+      });
+
+      // Log environment variables in error
+      console.error('🔧 Environment Check in Error:', {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NODE_ENV: process.env.NODE_ENV,
+        baseURL: this.baseURL,
+      });
+
+      throw error;
+    }
   }
 }
 

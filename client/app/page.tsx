@@ -32,6 +32,7 @@ import { apiService } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useErrorHandler } from "@/hooks/use-error-handler";
 import { api } from "@/config/api";
+import DebugInfo from "@/components/DebugInfo";
 
 interface LowStockItem {
   id: number;
@@ -371,6 +372,9 @@ export default function Dashboard() {
         {showQuickSale && (
           <QuickSaleForm onClose={() => setShowQuickSale(false)} />
         )}
+
+        {/* Debug Component - Temporary for troubleshooting */}
+        <DebugInfo />
       </div>
     </ProtectedRoute>
   );
