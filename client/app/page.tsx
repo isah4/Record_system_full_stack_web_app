@@ -97,7 +97,7 @@ export default function Dashboard() {
       setActivityError(null);
       try {
         // Use the same endpoint and logic as the report page
-        const res = await api.get("/activity?limit=4");
+        const res = await api.get("/api/activity?limit=4");
         // Sort by activity_date DESC as a safeguard
         const sorted = [...res.data].sort((a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime());
         setRecentActivities(sorted);
