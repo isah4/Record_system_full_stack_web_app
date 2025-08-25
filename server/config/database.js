@@ -4,7 +4,7 @@ const env = require('./env');
 // Debug: print the DATABASE_URL and its type (mask password)
 if (env.DATABASE_URL) {
   const url = env.DATABASE_URL.replace(/(postgres:\/\/[^:]+:)[^@]+(@)/, '$1*****$2');
-  console.log('🔌 Using DATABASE_URL:', url);
+
 } else {
   console.log('❌ DATABASE_URL is not set');
 }

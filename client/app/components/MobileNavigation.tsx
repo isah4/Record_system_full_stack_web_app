@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingScreen from "./LoadingScreen";
 
 // Note: Inventory removed from mobile nav to prevent overflow on small screens
@@ -28,6 +28,26 @@ export default function MobileNavigation() {
   const router = useRouter();
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Hide navigation on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleNavigation = (href: string) => {
     if (pathname === href) return;
@@ -38,7 +58,10 @@ export default function MobileNavigation() {
   return (
     <React.Fragment>
       {isNavigating && <LoadingScreen />}
-      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg xs-mobile-nav">
+      <nav className={cn(
+        "fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg xs-mobile-nav transition-transform duration-300 ease-out",
+        isVisible ? "translate-y-0" : "translate-y-full"
+      )}>
         <div className="flex items-center justify-around">
           {navigationItems.map((item) => (
             <Button

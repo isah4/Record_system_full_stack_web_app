@@ -74,6 +74,36 @@
   .smooth-scroll {
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Native-like haptic feedback simulation */
+  .haptic-feedback {
+    animation: haptic-pulse 0.1s ease-out;
+  }
+
+  /* Pull to refresh animations */
+  .pull-indicator {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Enhanced mobile transitions */
+  .mobile-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Native-like button press effect */
+  .native-press:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Enhanced mobile shadows */
+  .mobile-shadow {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-shadow-lg {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* Custom animations optimized for mobile */
@@ -102,6 +132,18 @@
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes haptic-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 

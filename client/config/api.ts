@@ -7,7 +7,7 @@ const CLIENT_URL = process.env.NEXT_PUBLIC_CLIENT_URL;
 // Create axios instance
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // Increased from 10000 to 30000ms for Render.com
   headers: {
     'Content-Type': 'application/json',
   },

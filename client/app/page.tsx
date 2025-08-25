@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Plus,
   TrendingUp,
@@ -11,10 +11,12 @@ import {
   Bell,
   Search,
   LogOut,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +30,7 @@ import MobileNavigation from "./components/MobileNavigation";
 import QuickSaleForm from "./components/QuickSaleForm";
 import MobileStatsGrid from "./components/MobileStatsGrid";
 import RecentActivityList from "./components/RecentActivityList";
+import MobileGestureHandler from "@/components/MobileGestureHandler";
 import { apiService } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useErrorHandler } from "@/hooks/use-error-handler";
@@ -58,8 +61,13 @@ export default function Dashboard() {
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
   const router = useRouter();
   const { handleError } = useErrorHandler();
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number>(0);
+  const isPulling = useRef<boolean>(false);
 
   useEffect(() => {
     // Only fetch data if user is authenticated
@@ -108,6 +116,81 @@ export default function Dashboard() {
     }
     fetchRecentActivities();
   }, []);
+
+  // Pull to refresh functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling.current || window.scrollY > 0) return;
+    
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - touchStartY.current;
+    
+    if (distance > 0) {
+      e.preventDefault();
+      setPullDistance(Math.min(distance * 0.5, 100));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPulling.current) return;
+    
+    if (pullDistance > 50) {
+      setIsRefreshing(true);
+      // Refresh data
+      try {
+        await Promise.all([
+          fetchLowStock(),
+          fetchRecentActivities()
+        ]);
+      } finally {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }
+    } else {
+      setPullDistance(0);
+    }
+    
+    isPulling.current = false;
+  };
+
+  const fetchLowStock = async () => {
+    setLoadingLowStock(true);
+    try {
+      const data = await apiService.authenticatedRequest<LowStockItem[]>(
+        "/items/low-stock"
+      );
+      setLowStock(data);
+    } catch (err: any) {
+      if (!err.message?.includes('Access token') && !err.message?.includes('401')) {
+        handleError(err, {
+          title: "Failed to load low stock items",
+          description: "Could not fetch low stock alerts. Please try refreshing the page."
+        });
+      }
+    } finally {
+      setLoadingLowStock(false);
+    }
+  };
+
+  const fetchRecentActivities = async () => {
+    setLoadingActivities(true);
+    setActivityError(null);
+    try {
+      const res = await api.get("/api/activity?limit=4");
+      const sorted = [...res.data].sort((a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime());
+      setRecentActivities(sorted);
+    } catch (err: any) {
+      setActivityError("Could not load recent activity");
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
 
   const getUserInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
@@ -203,8 +286,29 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Pull to Refresh Indicator */}
+        {pullDistance > 0 && (
+          <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
+            <div className="bg-white rounded-full p-3 shadow-lg border border-slate-200">
+              <RefreshCw 
+                className={cn(
+                  "w-6 h-6 text-emerald-500 transition-transform duration-200",
+                  pullDistance > 50 ? "animate-spin" : ""
+                )}
+                style={{ transform: `rotate(${pullDistance * 1.8}deg)` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-24 xs-reduce-padding">
+        <div 
+          ref={mainContentRef}
+          className="flex-1 overflow-y-auto px-4 py-6 space-y-6 pb-24 xs-reduce-padding"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Welcome Section */}
           <div className="text-center xs-text-adjust">
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
@@ -236,67 +340,107 @@ export default function Dashboard() {
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 gap-3 xs-single-col">
-              <div onClick={async () => {
-                setQuickActionLoading("sales");
-                await new Promise(res => setTimeout(res, 400));
-                router.push("/sales");
-              }}>
-                {/* Sales */}
-                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center xs-reduce-card-padding">
-                    <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-200 transition-colors">
-                      <DollarSign className="w-8 h-8 text-emerald-600" />
-                    </div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
-                    <p className="text-sm text-slate-500">
-                      View all transactions
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div onClick={async () => {
-                setQuickActionLoading("expenses");
-                await new Promise(res => setTimeout(res, 400));
-                router.push("/expenses");
-              }}>
-                {/* Expenses */}
-                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center xs-reduce-card-padding">
-                    <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
-                      <FileText className="w-8 h-8 text-orange-600" />
-                    </div>
-                    <h3 className="font-semibold text-slate-800 mb-1">
-                      Expenses
-                    </h3>
-                    <p className="text-sm text-slate-500">Track spending</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div onClick={async () => {
-                setQuickActionLoading("debts");
-                await new Promise(res => setTimeout(res, 400));
-                router.push("/debts");
-              }}>
-                {/* Debts */}
-                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center xs-reduce-card-padding">
-                    <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
-                      <Users className="w-8 h-8 text-red-600" />
-                    </div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Debts</h3>
-                    <p className="text-sm text-slate-500">Manage payments</p>
-                  </CardContent>
-                </Card>
-              </div>
-              <div onClick={async () => {
-                setQuickActionLoading("inventory");
-                await new Promise(res => setTimeout(res, 400));
-                router.push("/inventory");
-              }}>
-                {/* Inventory */}
-                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95">
-                  <CardContent className="p-6 text-center xs-reduce-card-padding">
-                    <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+              <MobileGestureHandler
+                onDoubleTap={() => {
+                  setQuickActionLoading("sales");
+                  setTimeout(() => router.push("/sales"), 400);
+                }}
+                onLongPress={() => {
+                  // Show quick actions menu
+                  console.log("Long press on Sales");
+                }}
+              >
+                <div onClick={async () => {
+                  setQuickActionLoading("sales");
+                  await new Promise(res => setTimeout(res, 400));
+                  router.push("/sales");
+                }}>
+                  {/* Sales */}
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95 mobile-shadow">
+                    <CardContent className="p-6 text-center xs-reduce-card-padding">
+                      <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-200 transition-colors">
+                        <DollarSign className="w-8 h-8 text-emerald-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-800 mb-1">Sales</h3>
+                      <p className="text-sm text-slate-500">
+                        View all transactions
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </MobileGestureHandler>
+              <MobileGestureHandler
+                onDoubleTap={() => {
+                  setQuickActionLoading("expenses");
+                  setTimeout(() => router.push("/expenses"), 400);
+                }}
+                onLongPress={() => {
+                  console.log("Long press on Expenses");
+                }}
+              >
+                <div onClick={async () => {
+                  setQuickActionLoading("expenses");
+                  await new Promise(res => setTimeout(res, 400));
+                  router.push("/expenses");
+                }}>
+                  {/* Expenses */}
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95 mobile-shadow">
+                    <CardContent className="p-6 text-center xs-reduce-card-padding">
+                      <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
+                        <FileText className="w-8 h-8 text-orange-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-800 mb-1">
+                        Expenses
+                      </h3>
+                      <p className="text-sm text-slate-500">Track spending</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </MobileGestureHandler>
+              <MobileGestureHandler
+                onDoubleTap={() => {
+                  setQuickActionLoading("debts");
+                  setTimeout(() => router.push("/debts"), 400);
+                }}
+                onLongPress={() => {
+                  console.log("Long press on Debts");
+                }}
+              >
+                <div onClick={async () => {
+                  setQuickActionLoading("debts");
+                  await new Promise(res => setTimeout(res, 400));
+                  router.push("/debts");
+                }}>
+                  {/* Debts */}
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95 mobile-shadow">
+                    <CardContent className="p-6 text-center xs-reduce-card-padding">
+                      <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
+                        <Users className="w-8 h-8 text-red-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-800 mb-1">Debts</h3>
+                      <p className="text-sm text-slate-500">Manage payments</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </MobileGestureHandler>
+              <MobileGestureHandler
+                onDoubleTap={() => {
+                  setQuickActionLoading("inventory");
+                  setTimeout(() => router.push("/inventory"), 400);
+                }}
+                onLongPress={() => {
+                  console.log("Long press on Inventory");
+                }}
+              >
+                <div onClick={async () => {
+                  setQuickActionLoading("inventory");
+                  await new Promise(res => setTimeout(res, 400));
+                  router.push("/inventory");
+                }}>
+                  {/* Inventory */}
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95 mobile-shadow">
+                    <CardContent className="p-6 text-center xs-reduce-card-padding">
+                      <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
                       <Package className="w-8 h-8 text-purple-600" />
                     </div>
                     <h3 className="font-semibold text-slate-800 mb-1">
@@ -306,6 +450,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
+              </MobileGestureHandler>
             </div>
           </div>
 
