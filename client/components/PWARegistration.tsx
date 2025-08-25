@@ -167,7 +167,7 @@ export default function PWARegistration() {
       new Notification('Welcome to BizTracker!', {
         body: 'You\'ll now receive important business updates and reminders.',
         icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-72x72.png',
+        badge: '/icons/icon-192x192.png',
       });
     }
   };
@@ -175,8 +175,8 @@ export default function PWARegistration() {
   // Don't show anything if app is already installed
   if (isInstalled) return null;
 
-  // Show manual install button if no automatic prompt
-  const showManualInstall = !deferredPrompt && !showInstallPrompt;
+  // Show manual install button if no automatic prompt and not already showing something
+  const showManualInstall = !deferredPrompt && !showInstallPrompt && !showNotificationPrompt;
 
   return (
     <>

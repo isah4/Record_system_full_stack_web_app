@@ -1,6 +1,4 @@
 const CACHE_NAME = 'biztracker-v1.0.0';
-const STATIC_CACHE = 'biztracker-static-v1.0.0';
-const DYNAMIC_CACHE = 'biztracker-dynamic-v1.0.0';
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -14,7 +12,7 @@ const STATIC_FILES = [
 // Install event - cache static files
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE)
+    caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Caching static files');
         return cache.addAll(STATIC_FILES);
@@ -32,7 +30,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+          if (cacheName !== CACHE_NAME) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -60,28 +58,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache successful API responses
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Return cached response if offline
-          return caches.match(request);
-        })
-    );
-    return;
-  }
-
   // Handle static files
   event.respondWith(
     caches.match(request)
@@ -94,7 +70,7 @@ self.addEventListener('fetch', (event) => {
             // Cache new responses
             if (response.status === 200) {
               const responseClone = response.clone();
-              caches.open(DYNAMIC_CACHE).then((cache) => {
+              caches.open(CACHE_NAME).then((cache) => {
                 cache.put(request, responseClone);
               });
             }
@@ -129,7 +105,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New notification from BizTracker',
     icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    badge: '/icons/icon-192x192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),

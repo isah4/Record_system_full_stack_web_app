@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   keywords:
     "business management, sales tracking, inventory, expenses, small business",
   authors: [{ name: "BizTracker Team" }],
-  viewport: "width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover",
+  viewport: "width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover, minimal-ui",
   generator: "v0.dev",
   manifest: "/manifest.json",
   themeColor: "#10b981",
@@ -26,11 +26,11 @@ export const metadata: Metadata = {
     title: "BizTracker",
     startupImage: [
       {
-        url: "/icons/icon-512x512.png",
+        url: "/icons/icon-192x192.png",
         media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
       {
-        url: "/icons/icon-512x512.png",
+        url: "/icons/icon-192x192.png",
         media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
       },
       {
@@ -62,6 +62,8 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-title": "BizTracker",
     "msapplication-TileColor": "#10b981",
     "msapplication-config": "/browserconfig.xml",
+    "application-name": "BizTracker",
+    "msapplication-TileImage": "/icons/icon-192x192.png",
   },
 };
 
