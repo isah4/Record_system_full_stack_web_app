@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "pnpm build",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "installCommand": "pnpm install",
   "rewrites": [
     {
       "source": "/api/(.*)",

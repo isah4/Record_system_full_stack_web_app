@@ -11,10 +11,6 @@ const nextConfig = {
   },
   // Vercel-specific optimizations
   output: 'standalone',
-  experimental: {
-    // Enable app directory features
-    appDir: true,
-  },
   // Ensure proper routing
   trailingSlash: false,
   // Handle dynamic routes properly
