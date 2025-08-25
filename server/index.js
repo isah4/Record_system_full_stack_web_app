@@ -17,13 +17,40 @@ console.log('🌍 Environment:', env.NODE_ENV);
 console.log('🔗 Allowed Origins:', allowedOrigins);
 console.log('📡 API URL:', env.CLIENT_URL);
 
-// CORS configuration
+// Enhanced CORS configuration
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ CORS: Allowing origin:', origin);
+      return callback(null, true);
+    }
+    
+    // Log blocked origins for debugging
+    console.log('❌ CORS: Blocking origin:', origin);
+    console.log('🔒 Allowed origins:', allowedOrigins);
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -101,11 +128,38 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  console.log('🧪 CORS test endpoint accessed');
+  console.log('📍 Request Origin:', req.get('Origin'));
+  console.log('🔒 Allowed Origins:', allowedOrigins);
+  
+  res.json({ 
+    status: 'OK', 
+    message: 'CORS test successful',
+    timestamp: new Date().toISOString(),
+    requestOrigin: req.get('Origin'),
+    allowedOrigins: allowedOrigins,
+    corsEnabled: true
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Error occurred:', err.stack);
   console.error('📍 Request URL:', req.url);
   console.error('🔑 Request Method:', req.method);
+  
+  // Handle CORS errors specifically
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ 
+      error: 'CORS Error', 
+      message: 'Origin not allowed',
+      allowedOrigins: allowedOrigins,
+      requestOrigin: req.get('Origin')
+    });
+  }
+  
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
