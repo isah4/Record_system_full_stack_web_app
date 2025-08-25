@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: record-system-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/health
+    autoDeploy: true
+    numInstances: 1
+    scaling:
+      minInstances: 1
+      maxInstances: 1

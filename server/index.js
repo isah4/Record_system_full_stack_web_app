@@ -20,6 +20,17 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root route for basic connectivity
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Record System API Server is running',
+    timestamp: new Date().toISOString(),
+    environment: env.NODE_ENV,
+    port: PORT
+  });
+});
+
 // Import routes
 const authRoutes = require('./routes/auth');
 const salesRoutes = require('./routes/sales');
@@ -40,7 +51,12 @@ app.use('/api/activity', activityRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Error handling middleware
@@ -63,7 +79,10 @@ async function startServer() {
     if (portFreed) {
       // Port is available or was freed, start server on the original port
       app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌍 Environment: ${env.NODE_ENV}`);
+        console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`📊 Root endpoint: http://localhost:${PORT}/`);
       });
     } else {
       // Could not free the port, exit the process
