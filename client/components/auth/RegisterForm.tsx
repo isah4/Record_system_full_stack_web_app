@@ -21,20 +21,12 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Debug logging
-  console.log('🔧 RegisterForm: useAuth hook called');
-  const authContext = useAuth();
-  console.log('🔧 RegisterForm: authContext received:', authContext);
-  
-  const { register, error, clearError } = authContext;
+  const { register, error, clearError } = useAuth();
   const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('🔧 RegisterForm: Form submitted');
-    console.log('🔧 RegisterForm: register function type:', typeof register);
     
     if (!email || !password || !confirmPassword) {
       handleError("Please fill in all fields", {
@@ -43,7 +35,7 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
       });
       return;
     }
-
+    
     if (password !== confirmPassword) {
       handleError("Passwords do not match", {
         title: "Validation Error",
@@ -51,7 +43,7 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
       });
       return;
     }
-
+    
     if (password.length < 6) {
       handleError("Password too short", {
         title: "Validation Error",
@@ -59,18 +51,15 @@ export default function RegisterForm({ onToggleMode }: RegisterFormProps) {
       });
       return;
     }
-
-    setIsSubmitting(true);
-    clearError();
-
+    
     try {
-      console.log('🔧 RegisterForm: Calling register function');
+      setIsSubmitting(true);
+      clearError();
+      
       await register(email, password);
-      console.log('🔧 RegisterForm: Registration successful');
       handleSuccess("Registration successful! Welcome to BizTracker.");
       router.push('/');
     } catch (error) {
-      console.error('🔧 RegisterForm: Registration error:', error);
       handleError(error, {
         title: "Registration Failed",
         description: "Please try again with different credentials."

@@ -137,8 +137,6 @@ export default function QuickSaleForm({ onClose }: QuickSaleFormProps) {
         balance: balance,
       };
       
-      console.log('Sending sale data:', saleData);
-      
       await api.post("/api/sales", saleData);
       
       handleSuccess("Sale recorded successfully!");

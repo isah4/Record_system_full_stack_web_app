@@ -80,6 +80,20 @@ router.put('/:id', auth, async (req, res) => {
 
     const wholesalePrice = wholesale_price !== undefined ? wholesale_price : 0;
 
+    // Get the current item to compare stock changes
+    const currentItem = await pool.query(`
+      SELECT stock, name, price, wholesale_price FROM items WHERE id = $1
+    `, [id]);
+
+    if (currentItem.rows.length === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const oldStock = currentItem.rows[0].stock;
+    const itemName = currentItem.rows[0].name;
+    const itemPrice = currentItem.rows[0].price;
+    const itemWholesale = currentItem.rows[0].wholesale_price;
+
     const updatedItem = await pool.query(`
       UPDATE items 
       SET name = $1, price = $2, stock = $3, wholesale_price = $4
@@ -91,23 +105,35 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
+    // Send response first
     res.json(updatedItem.rows[0]);
 
-    // Log stock addition if stock increased
-    if (stock > oldStock) {
-      await pool.query(
-        `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
-         VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
-        [
-          'stock_addition',
-          id,
-          itemName,
-          stock - oldStock,
-          'added',
-          JSON.stringify({ old_stock: oldStock, new_stock: stock, price: itemPrice, wholesale_price: itemWholesale }),
-          req.user.userId
-        ]
-      );
+    // Log stock changes if stock was modified
+    if (stock !== oldStock) {
+      try {
+        await pool.query(
+          `INSERT INTO activity_log (activity_type, reference_id, description, amount, status, activity_date, details, created_by)
+           VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)`,
+          [
+            stock > oldStock ? 'stock_addition' : 'stock_reduction',
+            id,
+            itemName,
+            Math.abs(stock - oldStock),
+            stock > oldStock ? 'added' : 'reduced',
+            JSON.stringify({ 
+              old_stock: oldStock, 
+              new_stock: stock, 
+              price: itemPrice, 
+              wholesale_price: itemWholesale,
+              change: stock - oldStock
+            }),
+            req.user.userId
+          ]
+        );
+      } catch (logError) {
+        console.error('Failed to log stock change:', logError);
+        // Don't fail the main request if logging fails
+      }
     }
   } catch (error) {
     console.error('Update item error:', error);

@@ -50,46 +50,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const clearError = () => setError(null);
 
   // Check if user is logged in on app start
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // Import apiService dynamically to avoid circular imports
-          const { apiService } = await import('./api');
-          const { user } = await apiService.getCurrentUser();
-          setUser(user);
-        } catch (error) {
-          localStorage.removeItem('token');
-          console.error('Failed to get current user:', error);
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            // Import apiService dynamically to avoid circular imports
+            const { apiService } = await import('./api');
+            const { user } = await apiService.getCurrentUser();
+            setUser(user);
+            setIsAuthenticated(true);
+          } catch (error) {
+            console.error('Failed to get current user:', error);
+            localStorage.removeItem('token');
+          }
         }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    initAuth();
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Attempting login with:', { email });
       
       // Import apiService dynamically to avoid circular imports
       const { apiService } = await import('./api');
       const response = await apiService.login({ email, password });
       
-      console.log('Login response received:', { success: !!response.token });
       localStorage.setItem('token', response.token);
       setUser(response.user);
-    } catch (error) {
-      console.error('Login error:', error);
-      setError(error instanceof Error ? error.message : 'Login failed');
+      setIsAuthenticated(true);
+      setError(null);
+    } catch (error: any) {
+      setError(error.response?.data?.message || error.message || 'Login failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -107,8 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       localStorage.setItem('token', response.token);
       setUser(response.user);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Registration failed');
+      setIsAuthenticated(true);
+      setError(null);
+    } catch (error: any) {
+      setError(error.response?.data?.message || error.message || 'Registration failed');
       throw error;
     } finally {
       setIsLoading(false);
@@ -119,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     setUser(null);
     setError(null);
+    setIsAuthenticated(false);
     // Redirect to auth page after logout
     window.location.href = '/auth';
   };
@@ -126,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated,
     login,
     register,
     logout,

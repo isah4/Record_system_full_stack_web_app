@@ -45,21 +45,44 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/api/sales/${sale.id}/payment-history`);
+        setPaymentHistory(response.data);
+      } catch (error) {
+        console.error('Failed to fetch payment history:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchPaymentHistory();
   }, [sale.id]);
 
-  const fetchPaymentHistory = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/api/sales/${sale.id}/payment-history`);
-      console.log('Payment history response:', response.data);
-      setPaymentHistory(response.data);
-    } catch (error) {
-      console.error('Error fetching payment history:', error);
-      setPaymentHistory([]); // Ensure we set empty array on error
-    } finally {
-      setLoading(false);
-    }
+  const calculateRemainingBalance = () => {
+    if (!sale || !paymentHistory) return 0;
+    
+    const totalPaid = paymentHistory.reduce((sum, payment) => {
+      const amount = parseFloat(payment.amount);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
+    
+    return sale.total_amount - totalPaid;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(amount);
+  };
+
+  const getPaymentStatus = () => {
+    const remaining = calculateRemainingBalance();
+    if (remaining <= 0) return 'Paid';
+    if (remaining < sale.total_amount) return 'Partial';
+    return 'Unpaid';
   };
 
   const getPaymentTypeLabel = (type: string) => {
@@ -121,19 +144,10 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
 
   const totalPaid = paymentHistory.reduce((sum, payment) => {
     const amount = parseFloat(payment.amount) || 0;
-    console.log(`Payment amount: ${payment.amount} -> parsed: ${amount}`);
     return sum + amount;
   }, 0);
-  const remainingBalance = parseFloat(sale.total) - totalPaid;
+  const remainingBalance = calculateRemainingBalance();
   
-  console.log('Sale calculation debug:', {
-    saleTotal: sale.total,
-    paymentHistoryCount: paymentHistory.length,
-    totalPaid,
-    remainingBalance,
-    isNaN: isNaN(remainingBalance)
-  });
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in-0 duration-200">
@@ -182,7 +196,7 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
                 <div>
                   <p className="text-sm text-slate-600">Remaining Balance</p>
                   <p className={`font-bold text-xl ${remainingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ₦{isNaN(remainingBalance) ? '0' : remainingBalance.toLocaleString()}
+                    ₦{remainingBalance.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -261,7 +275,7 @@ export default function SaleDetailsModal({ sale, onClose }: SaleDetailsModalProp
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-emerald-600">Total Paid</p>
-                      <p className="font-bold text-xl text-emerald-800">₦{isNaN(totalPaid) ? '0' : totalPaid.toLocaleString()}</p>
+                      <p className="font-bold text-xl text-emerald-800">₦{totalPaid.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>

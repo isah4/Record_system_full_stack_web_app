@@ -20,40 +20,29 @@ export default function LoginForm({ onToggleMode }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Debug logging
-  console.log('🔧 LoginForm: useAuth hook called');
-  const authContext = useAuth();
-  console.log('🔧 LoginForm: authContext received:', authContext);
-  
-  const { login, error, clearError } = authContext;
+  const { login, error, clearError } = useAuth();
   const { handleError, handleSuccess } = useErrorHandler();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔧 LoginForm: Form submitted');
-    console.log('🔧 LoginForm: login function type:', typeof login);
-    
     if (!email || !password) {
       handleError("Please fill in all fields", {
         title: "Validation Error",
-        description: "Both email and password are required."
+        description: "Email and password are required."
       });
       return;
     }
-
-    setIsSubmitting(true);
-    clearError();
-
+    
     try {
-      console.log('🔧 LoginForm: Calling login function');
+      setIsSubmitting(true);
+      clearError();
+      
       await login(email, password);
-      console.log('🔧 LoginForm: Login successful');
       handleSuccess("Login successful! Welcome back.");
       router.push('/');
     } catch (error) {
-      console.error('🔧 LoginForm: Login error:', error);
       // Error is handled by the auth context, but we can also show toast
       handleError(error, {
         title: "Login Failed",

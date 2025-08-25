@@ -27,8 +27,6 @@ export default function DebugInfo() {
         setApiTest({ error: 'NEXT_PUBLIC_API_URL not defined' });
         return;
       }
-
-      console.log('🧪 Testing API connection to:', apiUrl);
       
       const response = await fetch(`${apiUrl}/api/health`);
       const data = await response.json();
@@ -40,15 +38,12 @@ export default function DebugInfo() {
         url: `${apiUrl}/api/health`,
       });
       
-      console.log('✅ API test successful:', data);
     } catch (error: any) {
       setApiTest({
         success: false,
         error: error.message,
         url: `${process.env.NEXT_PUBLIC_API_URL}/api/health`,
       });
-      
-      console.error('❌ API test failed:', error);
     }
   };
 
