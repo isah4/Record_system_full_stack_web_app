@@ -11,15 +11,10 @@
   "lang": "en",
   "prefer_related_applications": false,
   "related_applications": [],
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "display_override": ["standalone", "minimal-ui"],
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
-  "start_url": "/?source=pwa",
   "categories": ["business", "productivity", "finance"],
+  "id": "/",
+  "display_override": ["standalone", "minimal-ui"],
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -44,7 +39,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ],
-
+  ]
 }

@@ -35,6 +35,7 @@ export default function PWARegistration() {
       console.log('🎉 Install prompt triggered!');
       console.log('Event details:', e);
       console.log('Platforms:', (e as any).platforms);
+      console.log('User engagement level:', navigator.userActivation?.hasBeenActive);
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
@@ -108,11 +109,31 @@ export default function PWARegistration() {
       }
     }, 3000);
 
+    // Check if user has engaged with the page
+    const checkUserEngagement = () => {
+      if (navigator.userActivation?.hasBeenActive) {
+        console.log('✅ User has engaged with the page');
+        // Force check for install prompt
+        if (deferredPrompt) {
+          console.log('🎯 Install prompt available after user engagement');
+          setShowInstallPrompt(true);
+        }
+      }
+    };
+
+    // Listen for user interaction
+    document.addEventListener('click', checkUserEngagement, { once: true });
+    document.addEventListener('scroll', checkUserEngagement, { once: true });
+    document.addEventListener('touchstart', checkUserEngagement, { once: true });
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('click', checkUserEngagement);
+      document.removeEventListener('scroll', checkUserEngagement);
+      document.removeEventListener('touchstart', checkUserEngagement);
       clearTimeout(fallbackTimer);
     };
   }, []);
