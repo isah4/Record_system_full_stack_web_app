@@ -18,6 +18,7 @@
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
+  "start_url": "/?source=pwa",
   "categories": ["business", "productivity", "finance"],
   "icons": [
     {

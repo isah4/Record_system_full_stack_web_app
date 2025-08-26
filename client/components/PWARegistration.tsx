@@ -32,7 +32,9 @@ export default function PWARegistration() {
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      console.log('Install prompt triggered');
+      console.log('🎉 Install prompt triggered!');
+      console.log('Event details:', e);
+      console.log('Platforms:', (e as any).platforms);
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
@@ -113,13 +115,6 @@ export default function PWARegistration() {
       window.removeEventListener('offline', handleOffline);
       clearTimeout(fallbackTimer);
     };
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
   }, []);
 
   const handleInstallClick = async () => {
@@ -159,6 +154,15 @@ export default function PWARegistration() {
     setShowInstallPrompt(false);
   };
 
+  // Force trigger the beforeinstallprompt if available
+  const forceInstallPrompt = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+    } else {
+      showManualInstallInstructions();
+    }
+  };
+
   const handleNotificationPermission = async () => {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
@@ -175,8 +179,8 @@ export default function PWARegistration() {
   // Don't show anything if app is already installed
   if (isInstalled) return null;
 
-  // Show manual install button if no automatic prompt and not already showing something
-  const showManualInstall = !deferredPrompt && !showInstallPrompt && !showNotificationPrompt;
+  // Show manual install button if no automatic prompt
+  const showManualInstall = !deferredPrompt && !showInstallPrompt;
 
   return (
     <>
@@ -244,7 +248,7 @@ export default function PWARegistration() {
       {showManualInstall && (
         <div className="fixed bottom-20 left-4 right-4 z-[9999]">
           <Button
-            onClick={showManualInstallInstructions}
+            onClick={forceInstallPrompt}
             size="sm"
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
           >

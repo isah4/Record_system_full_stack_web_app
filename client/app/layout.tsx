@@ -64,6 +64,7 @@ export const metadata: Metadata = {
     "msapplication-config": "/browserconfig.xml",
     "application-name": "BizTracker",
     "msapplication-TileImage": "/icons/icon-192x192.png",
+    "msapplication-navbutton-color": "#10b981",
   },
 };
 
