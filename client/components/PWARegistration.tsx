@@ -32,20 +32,11 @@ export default function PWARegistration() {
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      console.log('🎉 Install prompt triggered!');
-      console.log('Event details:', e);
-      console.log('Platforms:', (e as any).platforms);
-      console.log('User engagement level:', navigator.userActivation?.hasBeenActive);
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallPrompt(true);
     };
 
-    // Debug logging
-    console.log('PWA Registration: Checking browser capabilities...');
-    console.log('Service Worker support:', 'serviceWorker' in navigator);
-    console.log('BeforeInstallPrompt support:', 'BeforeInstallPromptEvent' in window);
-    console.log('Display mode:', window.matchMedia('(display-mode: standalone)').matches);
-    console.log('User agent:', navigator.userAgent);
+    // Debug logging removed
 
     // Listen for appinstalled event
     const handleAppInstalled = () => {
@@ -68,7 +59,6 @@ export default function PWARegistration() {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/' })
         .then((registration) => {
-          console.log('Service Worker registered successfully:', registration);
           
           // Check for updates
           registration.addEventListener('updatefound', () => {
@@ -85,8 +75,8 @@ export default function PWARegistration() {
             }
           });
         })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
+        .catch(() => {
+          // Service Worker registration failed
         });
     }
 
@@ -104,7 +94,6 @@ export default function PWARegistration() {
     // Fallback: Show install prompt after a delay if no beforeinstallprompt event
     const fallbackTimer = setTimeout(() => {
       if (!deferredPrompt && !isInstalled && 'serviceWorker' in navigator) {
-        console.log('Showing fallback install prompt');
         setShowInstallPrompt(true);
       }
     }, 3000);
@@ -112,10 +101,8 @@ export default function PWARegistration() {
     // Check if user has engaged with the page
     const checkUserEngagement = () => {
       if (navigator.userActivation?.hasBeenActive) {
-        console.log('✅ User has engaged with the page');
         // Force check for install prompt
         if (deferredPrompt) {
-          console.log('🎯 Install prompt available after user engagement');
           setShowInstallPrompt(true);
         }
       }
@@ -262,20 +249,6 @@ export default function PWARegistration() {
               <X className="w-4 h-4" />
             </Button>
           </div>
-        </div>
-      )}
-
-      {/* Manual Install Button - Always visible for better UX */}
-      {showManualInstall && (
-        <div className="fixed bottom-20 left-4 right-4 z-[9999]">
-          <Button
-            onClick={forceInstallPrompt}
-            size="sm"
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Install BizTracker
-          </Button>
         </div>
       )}
     </>

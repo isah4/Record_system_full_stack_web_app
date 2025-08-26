@@ -30,6 +30,7 @@ export default function MobileNavigation() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   // Hide navigation on scroll down, show on scroll up
   useEffect(() => {
@@ -49,6 +50,23 @@ export default function MobileNavigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // Detect installed (standalone) mode to apply safe-area padding
+  useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+    setIsStandalone(!!standalone);
+
+    const handler = (e: MediaQueryListEvent) => setIsStandalone(e.matches);
+    const mql = window.matchMedia('(display-mode: standalone)');
+    try {
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    } catch {
+      // older browsers
+      return () => {};
+    }
+  }, []);
+
   const handleNavigation = (href: string) => {
     if (pathname === href) return;
     setIsNavigating(true);
@@ -58,10 +76,14 @@ export default function MobileNavigation() {
   return (
     <React.Fragment>
       {isNavigating && <LoadingScreen />}
-      <nav className={cn(
-        "fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg xs-mobile-nav transition-transform duration-300 ease-out",
-        isVisible ? "translate-y-0" : "translate-y-full"
-      )}>
+      <nav
+        className={cn(
+          "fixed bottom-0 left-0 right-0 w-full bg-white border-t border-slate-200 px-2 py-2 z-[9999] shadow-lg xs-mobile-nav transition-transform duration-300 ease-out",
+          isVisible ? "translate-y-0" : "translate-y-full",
+          isStandalone ? "pb-safe" : undefined
+        )}
+        style={isStandalone ? { paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" } : undefined}
+      >
         <div className="flex items-center justify-around">
           {navigationItems.map((item) => (
             <Button
