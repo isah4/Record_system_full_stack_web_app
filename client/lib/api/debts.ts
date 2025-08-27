@@ -3,6 +3,7 @@ import { api } from '../../config/api';
 export interface Debt {
   id: string;
   customer: string;
+  customer_id?: number | null;
   originalAmount: number;
   paidAmount: number;
   balance: number;

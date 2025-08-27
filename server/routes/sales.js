@@ -34,14 +34,15 @@ router.get("/", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
   const client = await pool.connect();
   try {
-    const { buyer_name, items, payment_status, total, balance } = req.body;
+    const { buyer_name, items, payment_status, total, balance, customer_id } = req.body;
     
     console.log('Sale creation request:', {
       buyer_name,
       payment_status,
       total,
       balance,
-      items_count: items?.length
+      items_count: items?.length,
+      customer_id
     });
 
     // Validate input
@@ -53,6 +54,21 @@ router.post("/", auth, async (req, res) => {
       !payment_status
     ) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Enforce: If payment_status is 'debt', customer_id is required
+    if (payment_status === 'debt' && (customer_id === undefined || customer_id === null || customer_id === "")) {
+      return res.status(400).json({ error: 'customer_id is required for debt sales' });
+    }
+
+    // If customer_id is provided, validate it exists
+    let customerIdToUse = null;
+    if (customer_id !== undefined && customer_id !== null && customer_id !== "") {
+      const customer = await pool.query('SELECT id FROM customers WHERE id = $1 AND is_deleted = FALSE', [customer_id]);
+      if (customer.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid customer_id' });
+      }
+      customerIdToUse = customer_id;
     }
 
     await client.query("BEGIN");
@@ -77,11 +93,11 @@ router.post("/", auth, async (req, res) => {
 
     const newSale = await client.query(
       `
-      INSERT INTO sales (buyer_name, total, payment_status, balance)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO sales (buyer_name, total, payment_status, balance, customer_id)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `,
-      [buyer_name, total, payment_status, finalBalance]
+      [buyer_name, total, payment_status, finalBalance, customerIdToUse]
     );
 
     // Process each item
@@ -131,26 +147,26 @@ router.post("/", auth, async (req, res) => {
     if (payment_status === 'paid') {
       // Record full payment
       await client.query(
-        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [newSale.rows[0].id, 'full_settlement', total, 'Full payment on sale creation', req.user.userId]
+        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by, customer_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [newSale.rows[0].id, 'full_settlement', total, 'Full payment on sale creation', req.user.userId, customerIdToUse]
       );
       console.log('Full payment recorded in payment history');
     } else if (payment_status === 'partial') {
       // Record initial partial payment
       const initialPayment = total - finalBalance;
       await client.query(
-        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [newSale.rows[0].id, 'initial', initialPayment, 'Initial partial payment', req.user.userId]
+        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by, customer_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [newSale.rows[0].id, 'initial', initialPayment, 'Initial partial payment', req.user.userId, customerIdToUse]
       );
       console.log('Initial partial payment recorded in payment history');
     } else if (payment_status === 'debt') {
       // Record debt sale (no initial payment)
       await client.query(
-        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [newSale.rows[0].id, 'initial', 0, 'Debt sale - no initial payment', req.user.userId]
+        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by, customer_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [newSale.rows[0].id, 'initial', 0, 'Debt sale - no initial payment', req.user.userId, customerIdToUse]
       );
       console.log('Debt sale recorded in payment history');
     }
@@ -164,7 +180,8 @@ router.post("/", auth, async (req, res) => {
         total: total,
         finalBalance: finalBalance,
         repaidAmount: repaidAmount,
-        payment_status: payment_status
+        payment_status: payment_status,
+        customer_id: customerIdToUse
       });
       
       // Check if debt already exists for this sale
@@ -178,10 +195,10 @@ router.post("/", auth, async (req, res) => {
         // amount = total original debt amount, repaid_amount = total amount paid so far
       await client.query(
         `
-        INSERT INTO debts (sale_id, amount, repaid_amount)
-        VALUES ($1, $2, $3)
+        INSERT INTO debts (sale_id, amount, repaid_amount, customer_id)
+        VALUES ($1, $2, $3, $4)
       `,
-          [newSale.rows[0].id, total, repaidAmount]
+          [newSale.rows[0].id, total, repaidAmount, customerIdToUse]
         );
         console.log('Debt record created successfully');
       } else {
@@ -189,10 +206,10 @@ router.post("/", auth, async (req, res) => {
         await client.query(
           `
           UPDATE debts 
-          SET amount = $1, repaid_amount = $2 
-          WHERE sale_id = $3
+          SET amount = $1, repaid_amount = $2, customer_id = COALESCE($3, customer_id)
+          WHERE sale_id = $4
         `,
-          [total, repaidAmount, newSale.rows[0].id]
+          [total, repaidAmount, customerIdToUse, newSale.rows[0].id]
         );
         console.log('Debt record updated successfully');
       }
@@ -213,7 +230,7 @@ router.post("/", auth, async (req, res) => {
         total,
         payment_status,
         newSale.rows[0].created_at,
-        JSON.stringify({ items, balance: finalBalance }),
+        JSON.stringify({ items, balance: finalBalance, customer_id: customerIdToUse }),
         req.user.userId
       ]
     );

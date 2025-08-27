@@ -1,0 +1,15 @@
+-- Create customers table
+CREATE TABLE IF NOT EXISTS customers (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(150) NOT NULL,
+	phone VARCHAR(40) UNIQUE,
+	email VARCHAR(120),
+	address TEXT,
+	note TEXT,
+	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);

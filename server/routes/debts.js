@@ -12,8 +12,10 @@ router.get("/", auth, async (req, res) => {
         d.sale_id,
         d.amount,
         d.repaid_amount,
+        d.customer_id,
         d.created_at,
         s.buyer_name,
+        s.customer_id AS sale_customer_id,
         s.total as original_amount,
         s.balance,
         s.payment_status,
@@ -40,6 +42,7 @@ router.get("/", auth, async (req, res) => {
       return {
         id: debt.id,
         customer: debt.buyer_name,
+        customer_id: debt.customer_id || debt.sale_customer_id || null,
         originalAmount: parseFloat(debt.original_amount),
         paidAmount: parseFloat(debt.repaid_amount),
         balance: outstandingBalance,
@@ -61,6 +64,100 @@ router.get("/", auth, async (req, res) => {
   } catch (error) {
     console.error("Get debts error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Aggregated debts by customer
+router.get('/customers/summary', auth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COALESCE(d.customer_id, s.customer_id) AS customer_id,
+        COALESCE(MAX(c.name), MAX(s.buyer_name)) AS customer_name,
+        SUM(d.amount) AS total_debt,
+        SUM(d.repaid_amount) AS total_repaid,
+        SUM(d.amount - d.repaid_amount) AS outstanding,
+        MAX(s.created_at) AS last_activity
+      FROM debts d
+      JOIN sales s ON d.sale_id = s.id
+      LEFT JOIN customers c ON c.id = d.customer_id
+      GROUP BY COALESCE(d.customer_id, s.customer_id)
+      HAVING SUM(d.amount - d.repaid_amount) > 0
+      ORDER BY outstanding DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Customer summary error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// FIFO allocate a payment across a customer's open debts
+router.post('/customers/:customerId/payments', auth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { customerId } = req.params;
+    const { amount, description } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ error: 'Valid amount is required' });
+
+    // Validate customer
+    const customer = await client.query('SELECT id FROM customers WHERE id = $1 AND is_deleted = FALSE', [customerId]);
+    if (customer.rows.length === 0) return res.status(404).json({ error: 'Customer not found' });
+
+    await client.query('BEGIN');
+
+    // Fetch open debts for this customer ordered by oldest sale date
+    const debts = await client.query(`
+      SELECT d.id, d.sale_id, d.amount, d.repaid_amount, s.created_at
+      FROM debts d
+      JOIN sales s ON s.id = d.sale_id
+      WHERE COALESCE(d.customer_id, s.customer_id) = $1 AND (d.amount - d.repaid_amount) > 0
+      ORDER BY s.created_at ASC, d.id ASC
+    `, [customerId]);
+
+    let remaining = parseFloat(amount);
+    const allocations = [];
+
+    for (const row of debts.rows) {
+      if (remaining <= 0) break;
+      const open = parseFloat(row.amount) - parseFloat(row.repaid_amount);
+      const pay = Math.min(open, remaining);
+
+      // Update debt
+      await client.query('UPDATE debts SET repaid_amount = repaid_amount + $1 WHERE id = $2', [pay, row.id]);
+
+      // Update sale balance and status
+      const newBalance = open - pay;
+      await client.query(
+        'UPDATE sales SET balance = $1, payment_status = $2 WHERE id = $3',
+        [newBalance, newBalance === 0 ? 'paid' : 'partial', row.sale_id]
+      );
+
+      // Log payment history
+      await client.query(
+        `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by, customer_id)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [row.sale_id, newBalance === 0 ? 'full_settlement' : 'debt_repayment', pay, description || 'Customer payment allocation', req.user.userId, customerId]
+      );
+
+      allocations.push({ debt_id: row.id, sale_id: row.sale_id, allocated: pay, remaining_after: remaining - pay });
+      remaining -= pay;
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      customer_id: Number(customerId),
+      paid: parseFloat(amount) - remaining,
+      unallocated: remaining,
+      allocations
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Customer payment allocation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 
@@ -89,6 +186,18 @@ router.post("/:id/repayment", auth, async (req, res) => {
     }
 
     const debt = debtResult.rows[0];
+
+    // Ensure debt has customer_id; if missing, try to backfill from sale
+    let customerIdForPayment = debt.customer_id;
+    if (!customerIdForPayment) {
+      const saleRow = await client.query('SELECT customer_id FROM sales WHERE id = $1', [debt.sale_id]);
+      const saleCustomerId = saleRow.rows[0]?.customer_id || null;
+      if (saleCustomerId) {
+        await client.query('UPDATE debts SET customer_id = $1 WHERE id = $2', [saleCustomerId, id]);
+        customerIdForPayment = saleCustomerId;
+      }
+    }
+
     const newRepaidAmount = parseFloat(debt.repaid_amount) + parseFloat(amount);
 
     // Calculate new balance: remaining amount = original debt - total repaid
@@ -96,12 +205,12 @@ router.post("/:id/repayment", auth, async (req, res) => {
     
     // Record this repayment in payment history
     const paymentType = newBalance === 0 ? 'full_settlement' : 'debt_repayment';
-    const paymentDescription = newBalance === 0 ? 'Final payment - debt fully settled' : `Debt repayment - remaining balance: ₦${newBalance}`;
+    const paymentDescription = description || (newBalance === 0 ? 'Final payment - debt fully settled' : `Debt repayment - remaining balance: ₦${newBalance}`);
     
     await client.query(
-      `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [debt.sale_id, paymentType, amount, paymentDescription, req.user.userId]
+      `INSERT INTO payment_history (sale_id, payment_type, amount, description, created_by, customer_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [debt.sale_id, paymentType, amount, paymentDescription, req.user.userId, customerIdForPayment]
     );
 
     // Update debt record
@@ -143,7 +252,7 @@ router.post("/:id/repayment", auth, async (req, res) => {
         paymentDescription,
         amount,
         paymentType,
-        JSON.stringify({ sale_id: debt.sale_id, newBalance, totalRepaid: newRepaidAmount, buyer_name: buyerName }),
+        JSON.stringify({ sale_id: debt.sale_id, newBalance, totalRepaid: newRepaidAmount, buyer_name: buyerName, customer_id: customerIdForPayment }),
         req.user.userId
       ]
     );
@@ -173,6 +282,7 @@ router.get("/:id", auth, async (req, res) => {
       SELECT 
         d.*,
         s.buyer_name,
+        s.customer_id AS sale_customer_id,
         s.total as original_amount,
         s.balance,
         s.payment_status,
@@ -186,7 +296,19 @@ router.get("/:id", auth, async (req, res) => {
       return res.status(404).json({ error: "Debt not found" });
     }
 
-    res.json(debt.rows[0]);
+    const row = debt.rows[0];
+    res.json({
+      id: row.id,
+      sale_id: row.sale_id,
+      amount: row.amount,
+      repaid_amount: row.repaid_amount,
+      customer_id: row.customer_id || row.sale_customer_id || null,
+      buyer_name: row.buyer_name,
+      original_amount: row.original_amount,
+      balance: row.balance,
+      payment_status: row.payment_status,
+      sale_date: row.sale_date
+    });
   } catch (error) {
     console.error("Get debt error:", error);
     res.status(500).json({ error: "Internal server error" });

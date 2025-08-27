@@ -4,44 +4,46 @@ const env = require('./env');
 // Debug: print the DATABASE_URL and its type (mask password)
 if (env.DATABASE_URL) {
   const url = env.DATABASE_URL.replace(/(postgres:\/\/[^:]+:)[^@]+(@)/, '$1*****$2');
-
+  // console.log(`DB URL: ${url}`);
 } else {
   console.log('❌ DATABASE_URL is not set');
 }
 
-// Parse connection string to extract components
-const parseConnectionString = (url) => {
+// Helper: decide SSL based on URL/host
+function getSslOption(databaseUrl) {
   try {
-    const urlObj = new URL(url);
-    return {
-      host: urlObj.hostname,
-      port: urlObj.port || 5432,
-      database: urlObj.pathname.slice(1),
-      user: urlObj.username,
-      password: urlObj.password,
-      ssl: {
-        rejectUnauthorized: false,
-        sslmode: 'require'
-      }
-    };
-  } catch (error) {
-    console.error('❌ Error parsing DATABASE_URL:', error.message);
-    return null;
-  }
-};
+    const u = new URL(databaseUrl);
+    const host = (u.hostname || '').toLowerCase();
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    const isNeon = host.includes('neon.tech');
 
-// Create the connection pool with Neon-specific optimizations
+    // Allow override via env PGSSLMODE
+    const pgSslMode = (process.env.PGSSLMODE || '').toLowerCase();
+    if (pgSslMode === 'disable' || pgSslMode === 'allow' || isLocal) {
+      return false; // disable SSL for local or explicit disable
+    }
+
+    if (pgSslMode === 'require' || isNeon) {
+      return { rejectUnauthorized: false }; // enable SSL in relaxed mode for Neon/remote
+    }
+
+    // Default: no SSL for unknown/local-like hosts
+    return false;
+  } catch (e) {
+    // If parsing fails, be conservative and disable SSL for local dev
+    return false;
+  }
+}
+
+// Create the connection pool with conditional SSL
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-    sslmode: 'require'
-  },
-  // Neon-specific connection settings
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
-  maxUses: 7500, // Close (and replace) a connection after it has been used 7500 times
+  ssl: getSslOption(env.DATABASE_URL),
+  // Connection settings
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  maxUses: 7500,
 });
 
 // Test the database connection

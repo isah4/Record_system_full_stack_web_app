@@ -63,6 +63,7 @@ const analyticsRoutes = require('./routes/analytics');
 const expensesRoutes = require('./routes/expenses');
 const debtsRoutes = require('./routes/debts');
 const activityRoutes = require('./routes/activity');
+const customersRoutes = require('./routes/customers');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -72,6 +73,7 @@ app.use('/api/items', itemsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/debts', debtsRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/customers', customersRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -100,7 +102,7 @@ app.get('/api/cors-test', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Error occurred:', err.stack);
-  console.error('📍 Request URL:', req.url);
+  console.error('📍 Request URL:', err.url);
   console.error('🔑 Request Method:', req.method);
   
   // Handle CORS errors specifically

@@ -399,26 +399,26 @@ export default function Dashboard() {
               </MobileGestureHandler>
               <MobileGestureHandler
                 onDoubleTap={() => {
-                  setQuickActionLoading("debts");
-                  setTimeout(() => router.push("/debts"), 400);
+                  setQuickActionLoading("customers");
+                  setTimeout(() => router.push("/customers"), 400);
                 }}
                 onLongPress={() => {
-                  console.log("Long press on Debts");
+                  console.log("Long press on Customers");
                 }}
               >
                 <div onClick={async () => {
-                  setQuickActionLoading("debts");
+                  setQuickActionLoading("customers");
                   await new Promise(res => setTimeout(res, 400));
-                  router.push("/debts");
+                  router.push("/customers");
                 }}>
-                  {/* Debts */}
+                  {/* Customers */}
                   <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group active:scale-95 mobile-shadow">
                     <CardContent className="p-6 text-center xs-reduce-card-padding">
                       <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-red-200 transition-colors">
                         <Users className="w-8 h-8 text-red-600" />
                       </div>
-                      <h3 className="font-semibold text-slate-800 mb-1">Debts</h3>
-                      <p className="text-sm text-slate-500">Manage payments</p>
+                      <h3 className="font-semibold text-slate-800 mb-1">Customers</h3>
+                      <p className="text-sm text-slate-500">Debts & Profiles</p>
                     </CardContent>
                   </Card>
                 </div>

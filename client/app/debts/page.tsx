@@ -27,6 +27,7 @@ import {
 import MobileNavigation from "../components/MobileNavigation";
 import DebtRepaymentModal from "../components/DebtRepaymentModal";
 import { debtApi, type Debt } from "@/lib/api/debts";
+import { customersApi, type CustomerSummary } from "@/lib/api/customers";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -39,6 +40,8 @@ export default function DebtsPage() {
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [showRepaymentModal, setShowRepaymentModal] = useState(false);
   const [loadingDebts, setLoadingDebts] = useState(true);
+  const [customerFilter, setCustomerFilter] = useState<string>("all");
+  const [summaries, setSummaries] = useState<CustomerSummary[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -59,8 +62,18 @@ export default function DebtsPage() {
     }
   };
 
+  const fetchSummaries = async () => {
+    try {
+      const s = await customersApi.debtsSummary();
+      setSummaries(s);
+    } catch (e) {
+      // soft-fail
+    }
+  };
+
   useEffect(() => {
     fetchDebts();
+    fetchSummaries();
   }, []);
 
   const handleRepaymentSuccess = () => {
@@ -77,7 +90,9 @@ export default function DebtsPage() {
       debt.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter =
       filterStatus === "all" || debt.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesCustomer =
+      customerFilter === "all" || String(debt.customer_id ?? '') === customerFilter;
+    return matchesSearch && matchesFilter && matchesCustomer;
   });
 
   const totalOutstanding = debts.reduce(
@@ -225,6 +240,19 @@ export default function DebtsPage() {
                 <SelectItem value="all">All Debts</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
                 <SelectItem value="current">Current</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+              <SelectTrigger className="flex-1 h-12 rounded-xl">
+                <SelectValue placeholder="All Customers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Customers</SelectItem>
+                {summaries.map((s) => (
+                  <SelectItem key={String(s.customer_id)} value={String(s.customer_id ?? '')}>
+                    {s.customer_name || 'Unnamed'} (₦{Number(s.outstanding).toFixed(2)})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button

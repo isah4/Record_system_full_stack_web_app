@@ -11,7 +11,8 @@
     "check-db": "node db/check-db.js",
     "test-connection": "node test-connection.js",
     "clear-port": "node -e \"require('./utils/port-manager').checkAndFreePort(5000, true)\"",
-    "safe-start": "npm run clear-port && npm start"
+    "safe-start": "npm run clear-port && npm start",
+    "backfill-customers": "node db/backfill-customers.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
